@@ -1,0 +1,1 @@
+  find ./ -name "*.o" -o -name "*.html" -o -name "*.a" -o -name "*.cm*" -o -name "*.tsk" | xargs rm -rf 
