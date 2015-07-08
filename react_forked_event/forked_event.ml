@@ -87,7 +87,6 @@ module E = struct
     if e = React.E.never || P_handle.is_locked parent_handle
     then e, C_handle.noop
     else 
-      let module Encoding = Encoding.Make(Encoding.Int) in 
       let fd_read, fd_write = Unix.pipe () in 
       match Unix.fork () with 
       | 0 ->                                    (** child process *) 
