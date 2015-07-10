@@ -38,6 +38,8 @@ end = struct
     lor f 1 16 
     lor f 2 8 
     lor f 3 0
+    (* single buffer object to handle all the read from that connection 
+     *)
 
 end 
 
@@ -143,107 +145,161 @@ type read_value =
     | Closed
 
 
+type read_state = {
+    mutable len : int;
+    mutable buf : bytes; 
+    mutable remaining : (int * int) option; 
+}
+
+let read_state_create () = {
+    len = 4;
+    buf = Bytes.create 4; 
+    remaining = None; 
+}
+
+let read_state_check_size ({len; buf; remaining=_} as state) s = 
+    let overflow = len - s in 
+    if overflow < 0 
+    then ( 
+        state.buf <- Bytes.extend buf 0 (- overflow);
+        state.len <- Bytes.length buf 
+    )
+
+type read_status = 
+    | Closed
+    | Partial 
+    | Complete of string  
+
+let read_new_string state read_fd = 
+    match Unix.read read_fd state.buf 0 Int_encoding.size with
+    | 0 -> Closed
+    | i when i = Int_encoding.size -> (
+        let string_size = Int_encoding.int_of_bytes state.buf 0 in 
+        read_state_check_size state @@ string_size + Int_encoding.size; 
+        match Unix.read read_fd state.buf Int_encoding.size string_size with 
+        | i when i = string_size -> ( 
+            let s = Bytes.sub_string state.buf Int_encoding.size string_size in 
+            Complete s
+        )
+        | 0 -> Closed
+        | x -> (
+            state.remaining <- Some (string_size - x, x); 
+            Partial
+        ) 
+    )
+    | x -> failwith @@ Printf.sprintf "Failed to read msg size (%i)" x
+
+let read_remaining state read_fd = 
+    match state.remaining with 
+    | Some (remaining_n, read_n) -> ( 
+        match Unix.read read_fd state.buf read_n remaining_n with
+        | 0 -> Closed
+        | i when i = remaining_n -> (
+            state.remaining <- None; 
+            let s = Bytes.sub_string state.buf Int_encoding.size (read_n + remaining_n) in  
+            Complete s 
+        )
+        | n -> (
+            state.remaining <- Some ((remaining_n - n), (read_n + n)); 
+            Partial 
+        )
+    )
+    | None -> failwith "read_remaining cannot only be called if remaining exists."
+
 let add_read fork_connection {selector; holder; } = 
     
     let read_ready_e = Select.add_in fork_connection#read_fd selector in 
 
     let on_close read_fd = 
         Select.remove_in read_fd selector; 
-        Some Closed
+        Some (Closed:read_value)
     in
-
-    let len = ref 4 in  
-    let buf = ref @@ Bytes.create !len in  
-
-    let check_buf string_size = 
-        let overflow = !len - Int_encoding.size - string_size in 
-        if overflow < 0 
-        then ( 
-            buf := Bytes.extend !buf 0 (- overflow);
-            len := Bytes.length !buf 
-        )
-    in 
-
-    let remaining = ref None in 
-
-    let read_new_string read_fd = 
-        match Unix.read read_fd !buf 0 Int_encoding.size with
-        | 0 -> on_close read_fd
-        | i when i = Int_encoding.size -> (
-            let string_size = Int_encoding.int_of_bytes !buf 0 in 
-            check_buf string_size; 
-            match Unix.read read_fd !buf Int_encoding.size (string_size) with 
-            | i when i = string_size -> ( 
-                let s = Bytes.sub_string !buf Int_encoding.size string_size in 
-                Some (String s)
-            )
-            | 0 -> on_close read_fd
-            | x -> (
-                remaining := Some (string_size - x, x); 
-                None
-            ) 
-        )
-        | x -> failwith @@ Printf.sprintf "Failed to read msg size (%i)" x
-    in 
     
-    let read_remaining read_fd (remaining_n, read_n) = 
-        match Unix.read read_fd !buf read_n remaining_n with
-        | 0 -> on_close read_fd
-        | i when i = remaining_n -> (
-            remaining := None; 
-            let s = Bytes.sub_string !buf Int_encoding.size (read_n + remaining_n) in  
-            Some (String s) 
-        )
-        | n -> (
-            remaining := Some ((remaining_n - n), (read_n + n)); 
-            None 
-        )
-    in
+    let state = read_state_create  () in 
 
     let msg_e = React.E.fmap (fun read_fd -> 
-        match !remaining with 
-        | None   -> read_new_string read_fd 
-        | Some r -> read_remaining  read_fd r 
+        let rv = match state.remaining with 
+            | None   -> read_new_string state read_fd 
+            | Some r -> read_remaining  state read_fd
+        in 
+        match rv with
+        | Complete s -> Some (String s) 
+        | Closed     -> on_close read_fd
+        | Partial    -> None 
     ) read_ready_e in 
 
     holder:=(React.E.fmap (fun _ -> None) msg_e)::!holder;
     
     msg_e
 
-let add_write fork_connection {selector; holder} = 
-    let buf = Bytes.create 4 in 
+type write_state = {
+    mutable remaining_write : (int * int) option;
+    buf : bytes; 
+}
 
+let write_state_create () = {
+    remaining_write = None; 
+    buf = Bytes.create 4; 
+}
+
+type write_status = 
+    | Complete 
+    | Partial 
+
+let write_new msg state write_fd : write_status = 
+    let l = String.length msg in 
+    Int_encoding.int_to_bytes_unsafe l state.buf 0;
+    let written = Unix.single_write write_fd state.buf 0 Int_encoding.size in
+    assert (written = Int_encoding.size);
+    match Unix.single_write_substring write_fd msg  0 l with 
+    | x when x = l -> Complete
+    | n            -> ( 
+        state.remaining_write <- Some (n, l - n); 
+        (*state.remaining_write <- Some (msg, tl, n, l - n) 
+    *)
+        Partial
+    )
+let write_remaining msg state write_fd : write_status = 
+    let encoded_n, len  = match state.remaining_write with
+      | Some (encoded_n, len) -> encoded_n, len
+      | None -> failwith "Programatic error [write_remaining]"
+    in 
+    match Unix.single_write_substring write_fd msg encoded_n len with 
+    | x when x = len -> (
+        state.remaining_write <- None ; 
+        Complete 
+    ) 
+    | n -> (
+        state.remaining_write <- Some (encoded_n + n, len - n);
+        Partial
+    )
+
+
+
+let add_write fork_connection {selector; holder} = 
     let msg_queue      = ref [] in 
     (* all the msg waiting to be sent *)
 
-    let remaining_write = ref None in  
-    (* the information to keep track of a partial read. When the 
-       file descriptor becomes readily available the 
-       remaining data is then rather than the next msg in the queue. 
-     *)
+    let state = write_state_create () in 
 
     let write_new_msg write_fd = 
         match !msg_queue with 
         | []       -> failwith "Programatic error [write_msg_queue is empty]"
         | msg::tl  -> (
-            let l = String.length msg in 
-            Int_encoding.int_to_bytes_unsafe l buf 0;
-            let written = Unix.single_write write_fd buf 0 Int_encoding.size in
-            assert (written = Int_encoding.size);
-            match Unix.single_write_substring write_fd msg  0 l with 
-            | x when x = l -> ( msg_queue :=tl )
-            | n            -> ( remaining_write := Some (msg, tl, n, l - n) 
-            )
-        );
+            match write_new msg state write_fd with
+            | Complete -> (msg_queue := tl)
+            | Partial  -> ()
+        )
     in
 
-    let write_remaining write_fd (msg, tl, encoded_n, len) = 
-        match Unix.single_write_substring write_fd msg encoded_n len with 
-        | x when x = len -> (
-            remaining_write := None ; 
-            msg_queue := tl
-        ) 
-        | n -> remaining_write := Some (msg, tl, encoded_n + n, len - n)
+    let write_remaining write_fd (encoded_n, len) = 
+        match !msg_queue with
+        | msg::tl -> (
+            match write_remaining msg state write_fd with
+            | Complete -> (msg_queue := List.tl !msg_queue) 
+            | Partial -> ()
+        )
+        | [] -> failwith "Programatic error [write_remaining]"
     in 
     
     let write_f msg = 
@@ -255,7 +311,7 @@ let add_write fork_connection {selector; holder} =
              *)
             let write_ready_e = Select.add_out fork_connection#write_fd selector in  
             let write_e = React.E.map (fun write_fd -> 
-                (match !remaining_write with 
+                (match state.remaining_write with 
                 | Some r -> write_remaining write_fd r 
                 | None   -> write_new_msg write_fd);
                 if !msg_queue = [] 

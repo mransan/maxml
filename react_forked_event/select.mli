@@ -13,6 +13,9 @@ val add_in : Unix.file_descr -> selector -> Unix.file_descr React.event
  *) 
 
 val remove_in : Unix.file_descr -> selector -> unit 
+(** [remove_in fd selector] remove [fd] from the list of file descriptors which 
+    are monitored for read events.
+  *)
 
 val add_out: Unix.file_descr -> selector -> Unix.file_descr React.event
 (** [add fd selector] returns an [event] which occurence indicates the file
@@ -20,11 +23,14 @@ val add_out: Unix.file_descr -> selector -> Unix.file_descr React.event
  *) 
 
 val remove_out : Unix.file_descr -> selector -> unit 
+(** [remove_out fd selector] remove [fd] from the list of file descriptors which 
+    are monitored for write events.
+  *)
 
 type select_status = 
-    | Timeout 
-    | Event_happened 
-    | No_fds
+    | Event_happened (** In this case at least one event was triggered *) 
+    | Timeout        (** No event happened on the monitored file descriptors *) 
+    | No_fds         (** There are no file desriptors to monitor any more *)
 
 val select : float -> selector -> select_status 
 (** [select timeout] will wait until either [timeout] seconds has happened or

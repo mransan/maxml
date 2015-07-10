@@ -31,8 +31,8 @@ let remove_out fd selector =
     selector := {selector_i with out_fds = List.filter (fun x -> fst x <> fd) out_fds} 
 
 type select_status = 
-    | Timeout 
     | Event_happened 
+    | Timeout 
     | No_fds 
 
 let select timeout selector  = 
