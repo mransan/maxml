@@ -1,7 +1,4 @@
 
-
-
-
 type selector 
 
 val create : unit -> selector 
@@ -26,6 +23,11 @@ val remove_out : Unix.file_descr -> selector -> unit
 (** [remove_out fd selector] remove [fd] from the list of file descriptors which 
     are monitored for write events.
   *)
+
+val add_side_effect_event : Unix.file_descr -> unit React.event -> selector -> unit 
+(** [add_side_effect_event fd event selector] keeps the [event] in memory with the
+    [selector] until the [fd] is removed
+ *) 
 
 type select_status = 
     | Event_happened (** In this case at least one event was triggered *) 

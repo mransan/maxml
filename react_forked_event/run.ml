@@ -164,7 +164,7 @@ let run_03 () =
 
     let nb_of_child = 100 in
 
-    let selector = Forked_util.create () in
+    let selector = Select.create () in
 
     let events =
         let rec loop events = function
@@ -175,8 +175,8 @@ let run_03 () =
                 Random.self_init ();
                 (*Unix.sleep (Random.int 3 + 1); 
                  *)
-                let selector     = Forked_util.create () in 
-                let write_msg, _ = Forked_util.add_fork_connection connection selector in 
+                let selector     = Select.create () in 
+                let write_msg    = Encoding_event.write_event connection#write_fd selector in 
                 for i=1 to 100  do
                     let len = Random.int 100_000 + 10 in 
                     let len = 100_000 in 
@@ -185,9 +185,9 @@ let run_03 () =
                     write_msg msg 
                 done;
                 let rec loop () = 
-                    match Forked_util.select 0.1 selector with 
+                    match Select.select 0.1 selector with 
                     | Select.Timeout | Select.No_fds -> (
-                        if Forked_util.nb_of_writes selector = 0 
+                        if Select.nb_of_writes selector = 0 
                         then (
                             Printf.printf "Child [%10i] exiting\n%!" (Unix.getpid()) ; 
                             exit 0 
@@ -200,7 +200,7 @@ let run_03 () =
             )
             | Forked_util.Parent (childpid , connection) -> (
                 Unix.close connection#write_fd;
-                let _, event = Forked_util.add_fork_connection connection selector in
+                let event = Encoding_event.read_event connection#read_fd selector in
                 let event = React.E.map (fun read_value -> 
                     (*Printf.printf "read_event from [%10i]\n%!" childpid;
                      *)
@@ -214,16 +214,16 @@ let run_03 () =
 
     let merger_e = React.E.merge (fun (l:string list) (childpid, read_value) ->  
         match read_value with 
-        | Forked_util.String s -> 
+        | Encoding_event.String s -> 
             let len = String.length s in 
             (Printf.sprintf "child [%6i] received : [%10i]" childpid len)::l  
-        | Forked_util.Closed   -> l
+        | Encoding_event.Closed   -> l
     ) [] events in
 
     let counter_s =
         let e = React.E.merge (fun i (_, read_value) -> match read_value with 
-            | Forked_util.Closed   -> i+1
-            | Forked_util.String _ -> i ) 0 events in
+            | Encoding_event.Closed   -> i+1
+            | Encoding_event.String _ -> i ) 0 events in
         let e = React.E.fold (fun n i -> n  - i) nb_of_child e in
         React.S.hold nb_of_child e in
 
@@ -238,10 +238,10 @@ let run_03 () =
     holder := printer::!holder; 
 
     while React.S.value counter_s <> 0 do
-        let (_:Select.select_status) = Forked_util.select 1. selector in 
+        let (_:Select.select_status) = Select.select 1. selector in 
         ()
     done;
     ()
 
 let () =
-  run_03 ()
+    run_03 ()
