@@ -7,7 +7,7 @@ type selector_i  = {
     holders_fds : (Unix.file_descr * unit React.event) list;
 } 
 
-type selector = selector_i ref 
+type t = selector_i ref 
 
 let create () = ref {
     in_fds = []; 

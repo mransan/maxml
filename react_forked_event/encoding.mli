@@ -13,13 +13,15 @@ val read_msg : ?buf:bytes -> Unix.file_descr -> string
   *) 
 
 
-
 module Read : sig 
 
     type status = 
-        | Closed
-        | Partial 
-        | Complete of string  
+        | Closed             (** [Closed] indicates the file descriptor has been closed
+                                 and no data can be read anymore *)
+        | Partial  of float  (** [Partial percentage] indicates a partial read 
+                                of a message with [percentage] read so far. *)  
+        | Complete of string (** [Complete s] indicates that the a full message
+                                 [s] has been read. *) 
     
     type state
     (** abstract type which holds the data between intermediate and subsequent
@@ -40,8 +42,6 @@ module Read : sig
         then all the information will be kept in the [state] (ie [state] will be
         modified).
       *)
-
-
 end 
 
 

@@ -5,10 +5,10 @@ type read_value =
 
 let read_event read_fd selector = 
 
-    let read_ready_e = Select.add_in read_fd selector in 
+    let read_ready_e = Selector.add_in read_fd selector in 
 
     let on_close () = 
-        Select.remove_in read_fd selector; 
+        Selector.remove_in read_fd selector; 
         Some Closed
     in
     
@@ -21,14 +21,12 @@ let read_event read_fd selector =
     let msg_e = React.E.fmap (function 
         | Encoding.Read.Complete s -> Some (String s) 
         | Encoding.Read.Closed     -> on_close ()
-        | Encoding.Read.Partial    -> None 
+        | Encoding.Read.Partial  _ -> None 
     ) read_e in 
 
-    Select.add_side_effect_event read_fd (React.E.fmap (fun _ -> None) msg_e) selector; 
+    Selector.add_side_effect_event read_fd (React.E.fmap (fun _ -> None) msg_e) selector; 
     
     msg_e
-
-
     
 let write_event write_fd selector = 
     let msg_queue      = ref [] in 
@@ -53,14 +51,14 @@ let write_event write_fd selector =
             (* When a brand new msg is added this is when we need to start
                listening to the file descriptor availability
              *)
-            let write_ready_e = Select.add_out write_fd selector in  
+            let write_ready_e = Selector.add_out write_fd selector in  
             let write_e = React.E.map (fun write_fd -> 
                 write ();
                 if !msg_queue = [] 
-                then Select.remove_out write_fd selector
+                then Selector.remove_out write_fd selector
                 else ()
             ) write_ready_e in 
-            Select.add_side_effect_event write_fd write_e selector;  
+            Selector.add_side_effect_event write_fd write_e selector;  
         )
         else () 
     in  

@@ -127,7 +127,7 @@ module Read = struct
     
     type status = 
         | Closed
-        | Partial 
+        | Partial  of float  
         | Complete of string  
     
     let read_new state fd = 
@@ -144,7 +144,7 @@ module Read = struct
             | 0 -> Closed
             | x -> (
                 state.remaining <- Some (string_size - x, x); 
-                Partial
+                Partial (100. *. float_of_int x /. (float_of_int string_size)) 
             ) 
         )
         | x -> failwith @@ Printf.sprintf "Failed to read msg size (%i)" x
@@ -158,8 +158,11 @@ module Read = struct
             Complete s 
         )
         | n -> (
+            let read = n+n in 
+            let remaining_n = remaining_n -n in 
+            let total = remaining_n + read in 
             state.remaining <- Some ((remaining_n - n), (n + n)); 
-            Partial 
+            Partial (100. *. float_of_int read /. (float_of_int total))  
         )
     
     let read ({remaining; _ } as state) read_fd = 

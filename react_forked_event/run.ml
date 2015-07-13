@@ -164,19 +164,19 @@ let run_03 () =
 
     let nb_of_child = 100 in
 
-    let selector = Select.create () in
+    let selector = Selector.create () in
 
     let events =
         let rec loop events = function
         | 0 -> events
         | i -> (
-            match Forked_util.fork () with
-            | Forked_util.Child connection -> (
+            match Fork_util.fork () with
+            | Fork_util.Child {Fork_util.write_fd; _ } -> (
                 Random.self_init ();
                 (*Unix.sleep (Random.int 3 + 1); 
                  *)
-                let selector     = Select.create () in 
-                let write_msg    = Encoding_event.write_event connection#write_fd selector in 
+                let selector     = Selector.create () in 
+                let write_msg    = Encoding_event.write_event write_fd selector in 
                 for i=1 to 100  do
                     let len = Random.int 100_000 + 10 in 
                     let len = 100_000 in 
@@ -185,22 +185,22 @@ let run_03 () =
                     write_msg msg 
                 done;
                 let rec loop () = 
-                    match Select.select 0.1 selector with 
-                    | Select.Timeout | Select.No_fds -> (
-                        if Select.nb_of_writes selector = 0 
+                    match Selector.select 0.1 selector with 
+                    | Selector.Timeout | Selector.No_fds -> (
+                        if Selector.nb_of_writes selector = 0 
                         then (
                             Printf.printf "Child [%10i] exiting\n%!" (Unix.getpid()) ; 
                             exit 0 
                         )
                         else loop ()
                     )
-                    | Select.Event_happened -> loop ()  
+                    | Selector.Event_happened -> loop ()  
                 in 
                 loop () 
             )
-            | Forked_util.Parent (childpid , connection) -> (
-                Unix.close connection#write_fd;
-                let event = Encoding_event.read_event connection#read_fd selector in
+            | Fork_util.Parent (childpid , {Fork_util.read_fd;write_fd} ) -> (
+                Unix.close write_fd;
+                let event = Encoding_event.read_event read_fd selector in
                 let event = React.E.map (fun read_value -> 
                     (*Printf.printf "read_event from [%10i]\n%!" childpid;
                      *)
@@ -238,7 +238,7 @@ let run_03 () =
     holder := printer::!holder; 
 
     while React.S.value counter_s <> 0 do
-        let (_:Select.select_status) = Select.select 1. selector in 
+        let (_:Selector.select_status) = Selector.select 1. selector in 
         ()
     done;
     ()
