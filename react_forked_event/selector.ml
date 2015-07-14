@@ -4,11 +4,19 @@ type event_handler = (?step:React.step -> Unix.file_descr -> unit)
 type selector_i  = {
     in_fds : (Unix.file_descr * event_handler) list ;
     out_fds : (Unix.file_descr * event_handler) list ;
+    holders_fds : (Unix.file_descr * unit React.event) list;
 } 
 
-type selector = selector_i ref 
+type t = selector_i ref 
 
-let create () = ref {in_fds = [] ; out_fds = [] } 
+let create () = ref {
+    in_fds = []; 
+    out_fds = []; 
+    holders_fds = [];
+} 
+
+let filter_out l fd = 
+    List.filter (fun x -> fst x <> fd) l 
 
 let add_in fd selector = 
     let {in_fds; _ } as selector_i = !selector in  
@@ -17,8 +25,11 @@ let add_in fd selector =
     e 
 
 let remove_in fd selector = 
-    let {in_fds; _ } as selector_i = !selector in  
-    selector := {selector_i with in_fds = List.filter (fun x -> fst x<> fd) in_fds} 
+    let {in_fds; holders_fds; _ } as selector_i = !selector in  
+    selector := {selector_i with 
+        in_fds = filter_out in_fds fd; 
+        holders_fds = filter_out holders_fds fd
+    } 
 
 let add_out fd selector = 
     let {out_fds; _ } as selector_i = !selector in  
@@ -27,12 +38,19 @@ let add_out fd selector =
     e 
 
 let remove_out fd selector = 
-    let {out_fds; _ } as selector_i = !selector in  
-    selector := {selector_i with out_fds = List.filter (fun x -> fst x <> fd) out_fds} 
+    let {out_fds;holders_fds;  _ } as selector_i = !selector in  
+    selector := {selector_i with 
+        out_fds = filter_out out_fds fd; 
+        holders_fds = filter_out holders_fds fd;
+    } 
+
+let add_side_effect_event fd event selector = 
+    let ({holders_fds; _ } as selector_i) = !selector in 
+    selector := {selector_i with holders_fds = (fd, event)::holders_fds }
 
 type select_status = 
-    | Timeout 
     | Event_happened 
+    | Timeout 
     | No_fds 
 
 let select timeout selector  = 
