@@ -160,9 +160,18 @@ let run_02 () =
 
 let holder = ref []
 
-let run_03 () =
+let time_f f = 
+  let t1 = Unix.gettimeofday () in 
+  let x  = f () in 
+  let t2 = Unix.gettimeofday () in 
+  (t2 -. t1), x 
 
-    let nb_of_child = 100 in
+let nb_of_child = 1
+let nb_of_msg   = 5_000
+let msg_size    = 50_000 
+let total       = nb_of_msg * nb_of_child * msg_size 
+
+let run_03 () =
 
     let selector = Selector.create () in
 
@@ -177,9 +186,9 @@ let run_03 () =
                  *)
                 let selector     = Selector.create () in 
                 let write_msg    = Encoding_event.write_event write_fd selector in 
-                for i=1 to 100  do
+                for i=1 to nb_of_msg do
                     let len = Random.int 100_000 + 10 in 
-                    let len = 100_000 in 
+                    let len = msg_size in 
                     let c   = Char.chr @@ Random.int 20 + 65 in 
                     let msg = String.make len c in 
                     write_msg msg 
@@ -199,7 +208,8 @@ let run_03 () =
                 loop () 
             )
             | Fork_util.Parent (childpid , {Fork_util.read_fd;write_fd} ) -> (
-                Unix.close write_fd;
+                (*Unix.close write_fd;
+                 *)
                 let event = Encoding_event.read_event read_fd selector in
                 let event = React.E.map (fun read_value -> 
                     (*Printf.printf "read_event from [%10i]\n%!" childpid;
@@ -232,7 +242,8 @@ let run_03 () =
     let (printer:unit React.event) = React.E.map (fun l ->
         print_endline @@ String.concat "," l;
         print_endline "-----------------";
-        flush stdout
+        flush stdout;
+        ()
     ) merger_e in
 
     holder := printer::!holder; 
@@ -244,4 +255,6 @@ let run_03 () =
     ()
 
 let () =
-    run_03 ()
+    let t, _ = time_f run_03 in 
+    Printf.printf "data rate : %f  Mb/s \n" (float_of_int total /.  (t *.  float_of_int 1024**2.));
+    Printf.printf "msg  rate : %f msg/s \n" (float_of_int (nb_of_msg*nb_of_child) /.  t)

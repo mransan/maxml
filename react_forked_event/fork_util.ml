@@ -8,8 +8,8 @@ type fork =
     | Parent of int * connection 
 
 let connection_of_pipe side pc = {
-    write_fd = Pipe_connection.write_fd `P1 pc; 
-    read_fd = Pipe_connection.read_fd `P1 pc; 
+    write_fd = Pipe_connection.write_fd side pc; 
+    read_fd = Pipe_connection.read_fd side pc; 
 }
 
 let fork () = 

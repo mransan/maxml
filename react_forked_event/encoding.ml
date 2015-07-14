@@ -157,11 +157,11 @@ module Read = struct
             let s = Bytes.sub_string state.buf Int_encoding.size (n + remaining_n) in  
             Complete s 
         )
-        | n -> (
-            let read = n+n in 
-            let remaining_n = remaining_n -n in 
+        | n' -> (
+            let read = n+n' in 
+            let remaining_n = remaining_n - n' in 
             let total = remaining_n + read in 
-            state.remaining <- Some ((remaining_n - n), (n + n)); 
+            state.remaining <- Some (remaining_n, read); 
             Partial (100. *. float_of_int read /. (float_of_int total))  
         )
     

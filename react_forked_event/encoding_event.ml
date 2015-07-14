@@ -29,24 +29,24 @@ let read_event read_fd selector =
     msg_e
     
 let write_event write_fd selector = 
-    let msg_queue      = ref [] in 
+    let msg_queue      = Queue.create () in 
     (* all the msg waiting to be sent *)
 
     let state = Encoding.Write.create_state () in 
 
     let write () = 
-        match !msg_queue with 
-        | []       -> failwith "Programatic error [write_msg_queue is empty]"
-        | msg::tl  -> (
-            match Encoding.Write.write msg state write_fd with
-            | Encoding.Write.Complete -> (msg_queue := tl)
-            | Encoding.Write.Partial  -> ()
+        match Queue.is_empty msg_queue with 
+        | true -> failwith "Programatic error [write_msg_queue is empty]"
+        | false -> (
+            match Encoding.Write.write (Queue.peek msg_queue) state write_fd with
+            | Encoding.Write.Complete -> ignore @@ Queue.pop msg_queue
+            | Encoding.Write.Partial  -> () 
         )
     in
 
     let write_f msg = 
-        msg_queue := !msg_queue @ [msg];
-        if List.length !msg_queue = 1
+        Queue.add msg msg_queue;
+        if Queue.length msg_queue = 1
         then ( 
             (* When a brand new msg is added this is when we need to start
                listening to the file descriptor availability
@@ -54,7 +54,7 @@ let write_event write_fd selector =
             let write_ready_e = Selector.add_out write_fd selector in  
             let write_e = React.E.map (fun write_fd -> 
                 write ();
-                if !msg_queue = [] 
+                if Queue.is_empty msg_queue 
                 then Selector.remove_out write_fd selector
                 else ()
             ) write_ready_e in 
