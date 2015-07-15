@@ -13,6 +13,19 @@ val read_msg : ?buf:bytes -> Unix.file_descr -> string
   *) 
 
 
+(** Module signature to encode the size of a message in bytes. 
+    
+    The protocol used to send message encodes first the size then 
+    then the message string. 
+
+    In order to accomodate different application with different message size
+    this module signature allows an application to define their own size
+    encoding. 
+
+    For instance if your message size is less than 254 then you can 
+    implement an in 1byte [Size_encoder_sig]. 
+
+  *) 
 module type Size_encoder_sig = sig
   val size : int 
   val encode : int -> bytes -> int -> unit 
@@ -20,6 +33,9 @@ module type Size_encoder_sig = sig
 end 
 
 module Size_32_encoder : Size_encoder_sig
+(** Off the shelf size encoder which will used 4bytes to encode the size, hence
+    allowing msg size between [0; ~3.8Gb]
+ *) 
 
 module type Read_sig = sig
   
@@ -59,12 +75,23 @@ module type Write_sig = sig
   type status = 
     | Complete 
     | Partial 
+  (** write status *)
   
   type state
+  (** abstract type which encapsulate the data associated with writing to 
+      a given file descriptor. A [state] can only be used with a single 
+      file descriptor.
+   *)
   
   val create_state : unit -> state
+  (** [create_state ()] creates a new state *)
 
   val write : string -> state -> Unix.file_descr -> status 
+  (** [write msg state fd] will write [msg] on [fd], encoding the 
+      message size using the [S] module. If [Partial] is returned 
+      then it is the responsability of the caller to call [write] 
+      again with the same [state] value.
+   *)
 end
 
 module Make_write(S:Size_encoder_sig) : Write_sig 
