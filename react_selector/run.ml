@@ -11,9 +11,9 @@ let time_f f =
   let t2 = Unix.gettimeofday () in 
   (t2 -. t1), x 
 
-let nb_of_child = 10
-let nb_of_msg   = 5000
-let msg_size    = 50_000
+let nb_of_child = 4
+let nb_of_msg   = 20000
+let msg_size    = 60_000
 
 let total       = nb_of_msg * nb_of_child * msg_size 
 
@@ -25,7 +25,15 @@ let run_as_child {Fork_util.write_fd; } =
 
   let new_msg () = 
     let c   = Char.chr @@ Random.int 20 + 65 in 
-    String.make msg_size c 
+    let s   = String.make msg_size c in 
+    (*
+    String.iter(fun c -> 
+      if c ='7'
+      then ()
+      else ()
+    ) s ;
+    *)
+    s 
   in 
     
   let rec loop nb_of_msg =  
@@ -60,12 +68,9 @@ let run () =
       match Fork_util.fork () with
       | Fork_util.Child  connection -> run_as_child connection 
       | Fork_util.Parent (childpid , {Fork_util.read_fd;write_fd} ) -> (
-        (*Unix.close write_fd;
-         *)
+        Unix.close write_fd;
         let event = Encoding_event.read_event read_fd selector in
         let event = React.E.map (fun read_value -> 
-          (*Printf.printf "read_event from [%10i]\n%!" childpid;
-           *)
           (childpid, read_value)) event in  
         loop ((event)::events) (i - 1)
         )
@@ -77,6 +82,13 @@ let run () =
   let merger_e = React.E.merge (fun (l:string list) (childpid, read_value) ->  
     match read_value with 
     | Encoding_event.String s -> 
+        (*
+      String.iter(fun c -> 
+        if c ='7'
+        then ()
+        else ()
+      ) s ;
+      *)
       let len = String.length s in 
       (Printf.sprintf "child [%6i] received : [%10i]" childpid len)::l  
     | Encoding_event.Closed   -> l
