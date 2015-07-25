@@ -53,15 +53,15 @@ message SearchRequest {
   let test_default s = 
     Printf.printf "---- %s ----\n" s;
     loop @@ Lexing.from_string s; 
-    Parser.default_ Lexer.lexer (Lexing.from_string s) in 
+    List.assoc "default" @@ Parser.default_ Lexer.lexer (Lexing.from_string s) in 
   
-  assert (Ast.Default_int 1    = test_default "[default = 1 ]"); 
-  assert (Ast.Default_int (-1) = test_default "[default = -1]"); 
-  assert (Ast.Default_string "hello" = test_default "[default = \"hello\"]"); 
-  assert (Ast.Default_string "he'l'lo" = test_default "[default = \"he'l'lo\"]"); 
-  assert (Ast.Default_string "he\"l\"lo" = test_default "[default = \"he\\\"l\\\"lo\"]"); 
-  assert (Ast.Default_float 1.23 = test_default "[default = 1.23]"); 
-  assert (Ast.Default_float (-. 1.23) = test_default "[default = -1.23]"); 
-  assert (Ast.Default_bool true  = test_default "[default = true]"); 
-  assert (Ast.Default_bool false = test_default "[default = false]"); 
+  assert (Ast.Constant_int 1    = test_default "[default = 1 ]"); 
+  assert (Ast.Constant_int (-1) = test_default "[default = -1]"); 
+  assert (Ast.Constant_string "hello" = test_default "[default = \"hello\"]"); 
+  assert (Ast.Constant_string "he'l'lo" = test_default "[default = \"he'l'lo\"]"); 
+  assert (Ast.Constant_string "he\"l\"lo" = test_default "[default = \"he\\\"l\\\"lo\"]"); 
+  assert (Ast.Constant_float 1.23 = test_default "[default = 1.23]"); 
+  assert (Ast.Constant_float (-. 1.23) = test_default "[default = -1.23]"); 
+  assert (Ast.Constant_bool true  = test_default "[default = true]"); 
+  assert (Ast.Constant_bool false = test_default "[default = false]"); 
   ()

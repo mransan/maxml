@@ -1,7 +1,10 @@
 
 
-type default_value  = 
-  | Default_string of string 
-  | Default_bool   of bool 
-  | Default_int    of int 
-  | Default_float  of float 
+type constant = 
+  | Constant_string of string 
+  | Constant_bool   of bool 
+  | Constant_int    of int 
+  | Constant_float  of float 
+
+type field_option  = string * constant 
+type field_options = field_option list 

@@ -17,26 +17,30 @@
 %token EOF
 
 %start default_
-%type <Ast.default_value> default_
+%type <Ast.field_options> default_
 
 %%
 
 default_: default EOF {$1}  
 
 default : 
-  LBRACKET IDENT EQUAL default_value RBRACKET EOF {
-    if $2 <> "default"
-    then failwith "invalid identifier in default clause"
-    else $4
-  }; 
+    LBRACKET field_options RBRACKET { $2 }; 
+  | LBRACKET RBRACKET { [] }; 
 
-default_value : 
-  | INT        {Ast.Default_int $1 }
-  | FLOAT      {Ast.Default_float $1}
-  | IDENT      {match $1 with 
-    | "true"  -> Ast.Default_bool true 
-    | "false" -> Ast.Default_bool false 
+field_options : 
+  | field_option                     { [$1] } 
+  | field_option COMMA field_options { $1::$3 }
+
+field_option :
+  IDENT EQUAL constant { ($1, $3) } 
+
+constant : 
+  | INT        { Ast.Constant_int $1 }
+  | FLOAT      { Ast.Constant_float $1 }
+  | IDENT      { match $1 with 
+    | "true"  -> Ast.Constant_bool true 
+    | "false" -> Ast.Constant_bool false 
     | _ -> failwith "invalid default value"
   }
-  | STRING     {Ast.Default_string $1}; 
+  | STRING     { Ast.Constant_string $1 }; 
 %%
