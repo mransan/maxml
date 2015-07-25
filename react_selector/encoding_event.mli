@@ -1,7 +1,5 @@
 
-
-
-module type Sig = sig 
+module type S = sig 
   type read_value = 
     | String of string 
     | Closed 
@@ -11,4 +9,4 @@ module type Sig = sig
   val write_event : Unix.file_descr -> Selector.t -> (string -> unit) 
 end 
 
-module Make(S:Encoding.Size_encoder_sig) : Sig 
+module Make(S:Encoding.Size_encoder_sig) : S

@@ -11,9 +11,9 @@ let time_f f =
   let t2 = Unix.gettimeofday () in 
   (t2 -. t1), x 
 
-let nb_of_child = 4
-let nb_of_msg   = 20000
-let msg_size    = 60_000
+let nb_of_child = 10
+let nb_of_msg   = 10000
+let msg_size    = 1_000
 
 let total       = nb_of_msg * nb_of_child * msg_size 
 
@@ -59,25 +59,18 @@ let run_as_child {Fork_util.write_fd; } =
 
 let run () =
 
-  let selector = Selector.create () in
-
-  let events =
-    let rec loop events = function
-    | 0 -> events
-    | i -> (
-      match Fork_util.fork () with
-      | Fork_util.Child  connection -> run_as_child connection 
-      | Fork_util.Parent (childpid , {Fork_util.read_fd;write_fd} ) -> (
-        Unix.close write_fd;
-        let event = Encoding_event.read_event read_fd selector in
-        let event = React.E.map (fun read_value -> 
-          (childpid, read_value)) event in  
-        loop ((event)::events) (i - 1)
-        )
-      )
-    in
-    loop [] nb_of_child
-  in
+  let events, selector =
+    let parent = fun (events, selector) (childpid, {Fork_util.read_fd;write_fd}) ->
+      Unix.close write_fd; 
+      let event = 
+        Encoding_event.read_event read_fd selector
+        |> React.E.map (fun read_value -> (childpid, read_value))
+      in 
+      event::events, selector 
+    in 
+    let child  = run_as_child  in 
+    Fork_util.fork_n ~parent ~child ~accu:([], Selector.create()) nb_of_child
+  in 
 
   let merger_e = React.E.merge (fun (l:string list) (childpid, read_value) ->  
     match read_value with 
@@ -89,8 +82,11 @@ let run () =
         else ()
       ) s ;
       *)
+      (*
       let len = String.length s in 
       (Printf.sprintf "child [%6i] received : [%10i]" childpid len)::l  
+      *)
+      s::l
     | Encoding_event.Closed   -> l
   ) [] events in
 
@@ -103,22 +99,52 @@ let run () =
 
   let merger_e = React.E.fmap (function | [] -> None | l -> Some l) merger_e in
 
+  let file_fd = Unix.openfile 
+    "tmp.tx" [
+      Unix.O_RDWR;
+      Unix.O_TRUNC; 
+      Unix.O_CREAT;
+      Unix.O_NONBLOCK; 
+      Unix.O_CLOEXEC] 
+    0o640 in   
+  let write_file = Encoding_event.write_event file_fd selector in 
+  let file_e     = React.E.map (List.iter write_file) merger_e in 
+
+  holder := file_e::!holder; 
+
   let counter = ref 0 in 
   let (printer:unit React.event) = React.E.map (fun l ->
     counter := !counter + List.length l ; 
+    (*
     print_endline @@ String.concat "," l;
     print_endline "-----------------";
     flush stdout;
+    *)
     ()
   ) merger_e in
 
   holder := printer::!holder; 
 
-  while React.S.value counter_s <> 0 do
+  while React.S.value counter_s <> 0 || Selector.nb_of_writes selector <> 0  do
     let (_:Selector.select_status) = Selector.select 1. selector in 
     ()
   done;
   Printf.printf "nb of msg: %i\n" !counter ;
+  
+  assert (0 = (Unix.lseek file_fd 0 Unix.SEEK_SET));
+
+  let t, _ = time_f (fun () -> 
+    let b = Bytes.create Encoding.Size_32_encoder.size in 
+    while !counter <> 0 do 
+      ignore @@ Unix.read file_fd b 0 4; 
+      let i = Encoding.Size_32_encoder.decode b 0 in 
+      (* Printf.printf "size: %i\n%!" i;
+       *)
+      ignore @@ Unix.lseek file_fd i Unix.SEEK_CUR;
+      counter := !counter - 1 
+    done
+    ) in 
+  Printf.printf "iteration time: %f\n%!" t;
   ()
 
 let () =

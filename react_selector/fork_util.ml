@@ -21,3 +21,10 @@ let fork () =
   | childpid -> 
     Pipe_connection.set `P2 pc; 
     Parent (childpid, connection_of_pipe `P2 pc) 
+
+let rec fork_n ~parent ~child ~accu = function 
+  | 0 -> accu  
+  | n -> (match fork () with
+    | Child c  -> child c 
+    | Parent (pid,c)  -> fork_n ~parent ~child ~accu:(parent accu (pid,c)) (n - 1)
+  )

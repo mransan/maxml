@@ -10,3 +10,10 @@ type fork =
   | Parent of int * connection 
 
 val fork : unit -> fork 
+
+val fork_n : 
+  parent:('a -> (int * connection) -> 'a) -> 
+  child :(connection -> 'a) -> 
+  accu:'a -> 
+  int -> 
+  'a 

@@ -1,5 +1,5 @@
 
-module type Sig = sig 
+module type S = sig 
   type read_value = 
     | String of string 
     | Closed 
@@ -11,8 +11,7 @@ end
 
 module Make(S:Encoding.Size_encoder_sig) = struct 
 
-  module Read = Encoding.Make_read(S)
-  module Write = Encoding.Make_write(S) 
+  module Encoding = Encoding.Make(S)
 
   type read_value = 
   | String of string 
@@ -27,16 +26,16 @@ module Make(S:Encoding.Size_encoder_sig) = struct
       Some Closed
     in
     
-    let state = Read.create_state () in 
+    let state = Encoding.create_read_state() in 
     
     let read_e  = React.E.map (fun read_fd -> 
-      Read.read state read_fd
+      Encoding.read state read_fd
     ) read_ready_e in  
     
     let msg_e = React.E.fmap (function 
-      | Read.Complete s -> Some (String s) 
-      | Read.Closed   -> on_close ()
-      | Read.Partial  _ -> None 
+      | Encoding.Read_complete s -> Some (String s) 
+      | Encoding.Read_closed     -> on_close ()
+      | Encoding.Read_partial  _ -> None 
     ) read_e in 
   
     Selector.add_side_effect_event read_fd (React.E.fmap (fun _ -> None) msg_e) selector; 
@@ -47,15 +46,15 @@ module Make(S:Encoding.Size_encoder_sig) = struct
     let msg_queue    = Queue.create () in 
     (* all the msg waiting to be sent *)
   
-    let state = Write.create_state () in 
+    let state = Encoding.create_write_state () in 
   
     let write () = 
       match Queue.is_empty msg_queue with 
       | true -> failwith "Programatic error [write_msg_queue is empty]"
       | false -> (
-        match Write.write (Queue.peek msg_queue) state write_fd with
-        | Write.Complete -> ignore @@ Queue.pop msg_queue
-        | Write.Partial  -> () 
+        match Encoding.write (Queue.peek msg_queue) state write_fd with
+        | Encoding.Write_complete -> ignore @@ Queue.pop msg_queue
+        | Encoding.Write_partial  -> () 
       )
     in
   
