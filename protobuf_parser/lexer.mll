@@ -2,6 +2,26 @@
 {
 open Parser 
 
+let create_hashtable size init =
+  let tbl = Hashtbl.create size in
+  List.iter (fun (key, data) -> 
+    Hashtbl.add tbl key data
+  ) init;
+  tbl
+
+
+let keywords = create_hashtable 50 [
+  "required", REQUIRED; 
+  "optional", OPTIONAL; 
+  "repeated", REPEATED;
+  "oneof"   , ONE_OF;
+  "message" , MESSAGE;
+]
+
+let resolve_identifier ident = 
+  try Hashtbl.find keywords ident 
+  with | Not_found -> IDENT ident 
+
 type comment =
   | Comment_value of string  
   | Comment_eof  
@@ -57,7 +77,7 @@ rule lexer = parse
   | inf_litteral  { FLOAT nan }
   | newline       { lexer lexbuf }
   | blank         { lexer lexbuf }
-  | full_ident    { IDENT (Lexing.lexeme lexbuf) }
+  | full_ident    { resolve_identifier (Lexing.lexeme lexbuf) }
   | eof           { EOF }
   | _             { failwith @@ Printf.sprintf "Unknown character found %s" @@
   Lexing.lexeme lexbuf}  

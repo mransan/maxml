@@ -1,0 +1,145 @@
+
+let unresolved_of_string s = 
+  let rec loop i l = 
+    try 
+      let i' = String.index_from s i '.' in 
+      let s' = String.sub s i (i' - i)  in 
+      loop (i'+1) (s'::l)  
+    with Not_found -> (String.sub s i (String.length s - i) ):: l 
+  in 
+  let l = loop 0 [] in 
+  match l with 
+  | [] -> failwith "Programmatic error"
+  | hd :: tl -> {
+    Astc.scope = (List.rev tl); 
+    Astc.type_name = hd;
+  }
+
+let field_type_of_string = function
+ | "double"    -> Astc.Field_type_double 
+ | "float"     -> Astc.Field_type_float 
+ | "int32"     -> Astc.Field_type_int32 
+ | "int64"     -> Astc.Field_type_int64 
+ | "uint32"    -> Astc.Field_type_uint32 
+ | "uint64"    -> Astc.Field_type_uint64
+ | "sint32"    -> Astc.Field_type_sint32 
+ | "sint64"    -> Astc.Field_type_sint64 
+ | "fixed32"   -> Astc.Field_type_fixed32 
+ | "fixed64"   -> Astc.Field_type_fixed64 
+ | "sfixed32"  -> Astc.Field_type_sfixed32 
+ | "sfixed64"  -> Astc.Field_type_sfixed64
+ | "bool"      -> Astc.Field_type_bool 
+ | "string"    -> Astc.Field_type_string 
+ | "bytes"     -> Astc.Field_type_bytes 
+ | s  -> Astc.Field_type_unresolved (unresolved_of_string s) 
+
+let compile_default constant = function  
+  | Astc.Field_type_double 
+  | Astc.Field_type_float -> (
+    match constant with 
+    | Ast.Constant_int i -> Ast.Constant_float (float_of_int i)
+    | _ -> failwith "unsuported default 1"
+  )
+  | Astc.Field_type_int32 
+  | Astc.Field_type_int64 
+  | Astc.Field_type_sint32 
+  | Astc.Field_type_sint64 
+  | Astc.Field_type_fixed32 
+  | Astc.Field_type_fixed64 
+  | Astc.Field_type_sfixed32 
+  | Astc.Field_type_sfixed64 -> (
+    match constant with 
+    | Ast.Constant_int _ -> constant  
+    | _ -> failwith "unsuported default 2"
+  )
+  | Astc.Field_type_uint32 
+  | Astc.Field_type_uint64 -> (
+    match constant with 
+    | Ast.Constant_int i -> if i >=0 
+      then constant 
+      else failwith "unsuported default 3"
+    | _ -> failwith "unsuported default 4"
+  )
+  | Astc.Field_type_bool -> (
+    match constant with 
+    | Ast.Constant_bool _ -> constant
+    | _ -> failwith "unsuported default 5"
+  ) 
+  | Astc.Field_type_string -> (
+   match constant with 
+   | Ast.Constant_string _ -> constant
+   | _ -> failwith "unsuported default 6"
+  ) 
+  | Astc.Field_type_bytes -> failwith "unsuported default 7" 
+  | Astc.Field_type_unresolved _ -> failwith "unsuported default 8" 
+
+let get_default field_options field_type = 
+  match List.assoc "default" field_options with
+  | constant -> Some (compile_default constant field_type)
+  | exception Not_found -> None 
+  
+let compile_field_p1 ({
+  Ast.field_name;
+  Ast.field_number;
+  Ast.field_label;
+  Ast.field_type;
+  Ast.field_options;
+} as field_parsed) = 
+  
+  let field_type = field_type_of_string field_type in 
+  let field_default = get_default field_options field_type in 
+  {
+    Astc.field_parsed;
+    Astc.field_type;
+    Astc.field_default;
+  }
+
+let compile_oneof_field_p1 ({
+  Ast.oneof_field_name;
+  Ast.oneof_field_number;
+  Ast.oneof_field_type;
+  Ast.oneof_field_options;
+} as oneof_field_parsed) = 
+  
+  let oneof_field_type = field_type_of_string oneof_field_type in 
+  let oneof_field_default = get_default oneof_field_options oneof_field_type in 
+  {
+    Astc.oneof_field_parsed;
+    Astc.oneof_field_type;
+    Astc.oneof_field_default;
+  }
+
+let compile_oneof_p1 ({
+  Ast.oneof_name; 
+  Ast.oneof_fields;
+}) = {
+  Astc.oneof_name; 
+  Astc.oneof_fields = List.map compile_oneof_field_p1 oneof_fields; 
+}
+
+let rec compile_message_p1 message_scope ({
+  Ast.message_name; 
+  Ast.body_content; 
+}) (all_messages:Astc.message list) = 
+  
+  let sub_scope = message_scope @ [ Astc.Message_name message_name] in 
+  
+  let body_content, all_sub = List.fold_left (fun (body_content, all_messages) -> function  
+    | Ast.Message_field f -> 
+        let sub = Astc.Message_field (compile_field_p1 f) in 
+        (sub :: body_content, all_messages)
+    | Ast.Message_oneof_field o -> 
+        let sub = Astc.Message_oneof_field (compile_oneof_p1 o) in 
+        (sub :: body_content, all_messages)
+    | Ast.Message_sub m -> 
+        let all_sub = compile_message_p1 sub_scope m all_messages in 
+        (body_content,  all_messages @ all_sub)
+  ) ([], []) body_content in
+
+  let body_content = List.rev body_content in 
+
+  all_messages @ ({
+    Astc.message_scope;
+    Astc.message_name; 
+    Astc.body_content;
+  } :: all_sub) 

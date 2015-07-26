@@ -9,8 +9,13 @@ rm lexer.ml
 $OCAMLYACC parser.mly
 $OCAMLLEX  lexer.mll
 $OCAMLOPT -c ast.ml
+$OCAMLOPT -c astc.ml
+$OCAMLOPT -c ast_util.mli
+$OCAMLOPT -c ast_util.ml
+$OCAMLOPT -c astc_util.mli
+$OCAMLOPT -c astc_util.ml
 $OCAMLOPT -c parser.mli
 $OCAMLOPT -c lexer.ml
 $OCAMLOPT -c parser.ml
 $OCAMLOPT -c main.ml
-$OCAMLOPT -o protobuf_parser.tsk ast.cmx parser.cmx lexer.cmx main.cmx
+$OCAMLOPT -o protobuf_parser.tsk ast.cmx ast_util.cmx astc.cmx astc_util.cmx parser.cmx lexer.cmx main.cmx
