@@ -30,3 +30,5 @@ val message :
   content:Ast.message_body_content list -> 
   string -> 
   Ast.message
+
+val message_printer :?level:int -> Ast.message -> unit 

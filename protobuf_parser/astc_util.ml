@@ -1,4 +1,11 @@
 
+let field_name {Astc.field_parsed; _ } = 
+  let {Ast.field_name; _ } = field_parsed in 
+  field_name 
+
+let field_number {Astc.field_parsed = {Ast.field_number;_}; _ } = 
+  field_number 
+
 let unresolved_of_string s = 
   let rec loop i l = 
     try 
@@ -132,7 +139,7 @@ let rec compile_message_p1 message_scope ({
         let sub = Astc.Message_oneof_field (compile_oneof_p1 o) in 
         (sub :: body_content, all_messages)
     | Ast.Message_sub m -> 
-        let all_sub = compile_message_p1 sub_scope m all_messages in 
+        let all_sub = compile_message_p1 sub_scope m [] in 
         (body_content,  all_messages @ all_sub)
   ) ([], []) body_content in
 
@@ -143,3 +150,66 @@ let rec compile_message_p1 message_scope ({
     Astc.message_name; 
     Astc.body_content;
   } :: all_sub) 
+
+let find_all_message_in_field_scope messages scope = 
+  List.filter (fun { Astc.message_scope;_ } -> 
+    let dec_scope = List.map (function 
+      | Astc.Namespace x -> x
+      | Astc.Message_name x -> x
+    ) message_scope in 
+    dec_scope = scope
+  ) messages 
+
+let compile_message_p2 messages {
+  Astc.message_name; 
+  Astc.message_scope;
+  Astc.body_content} = 
+
+  (* stringify the message scope so that it can 
+     be used with the field scope. 
+     
+     see `Note on scoping` in the README.md file
+   *)
+  let message_scope = List.map (function 
+    | Astc.Namespace    x -> x
+    | Astc.Message_name x -> x) message_scope in
+
+  let process_field_in_scope messages scope type_name = 
+    let messages  = find_all_message_in_field_scope messages scope in 
+    List.exists (fun {Astc.message_name; _ } -> 
+      type_name = message_name 
+    ) messages 
+  in 
+
+  (*
+  List.fold_right (fun new_scope all_scope_list -> 
+    *)
+    
+
+  (* TODO this algorithm is wrong and does not respect the resolution 
+     priority from protobuf specifications. 
+   *)
+  let process_field_type = function 
+    | Astc.Field_type_unresolved {Astc.scope; Astc.type_name } -> ( 
+      let scope, exist = List.fold_right (fun message_scope_item (scope, exist) ->  
+        let exist' = process_field_in_scope messages scope type_name in 
+        (message_scope_item::scope, exist || exist') 
+      ) message_scope (scope, false) in 
+      
+      let exist' = process_field_in_scope messages scope type_name in 
+      
+      if exist || exist' 
+      then () 
+      else raise Not_found
+    )
+    | _ -> ()
+  in
+
+  List.iter (function 
+    | Astc.Message_field {Astc.field_type; _ } -> 
+      process_field_type field_type 
+    | Astc.Message_oneof_field {Astc.oneof_fields; _ } -> 
+      List.iter (fun {Astc.oneof_field_type;_ } -> 
+        process_field_type oneof_field_type
+      ) oneof_fields 
+  ) body_content

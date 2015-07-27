@@ -50,8 +50,11 @@ option | oneof | mapField | reserved | emptyStatement } "}"
 */
 
 message : 
-  MESSAGE IDENT LBRACE message_body_content_list RBRACE { 
+  | MESSAGE IDENT LBRACE message_body_content_list RBRACE { 
     Ast_util.message ~content:$4 $2
+  } 
+  | MESSAGE IDENT LBRACE RBRACE { 
+    Ast_util.message ~content:[]  $2
   } 
 
 message_body_content_list:

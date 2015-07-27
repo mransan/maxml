@@ -27,3 +27,21 @@ let message ~content name = {
   Ast.message_name = name; 
   body_content = content;
 } 
+
+let rec message_printer ?level:(level = 0) {
+  Ast.message_name; 
+  Ast.body_content; } = 
+
+  let prefix () = 
+    for i=0 to level  - 1 do 
+      Printf.printf " ";
+    done; 
+  in 
+  prefix (); print_endline message_name; 
+  List.iter (function 
+    | Ast.Message_field {Ast.field_name; _ } -> 
+        prefix (); Printf.printf "- field [%s]\n" field_name
+    | Ast.Message_oneof_field {Ast.oneof_name ; _ } ->
+        prefix (); Printf.printf "- one of field [%s]\n" oneof_name
+    | Ast.Message_sub m -> message_printer ~level:(level + 2) m
+  ) body_content 

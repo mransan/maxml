@@ -26,14 +26,6 @@ let string_of_token = function
 open Printf 
 
 let () = 
-  let proto = "
-message SearchRequest {
-  required string query = 1;
-  optional int32 page_number = 2 [default = 1]; // Which page number do we want?
-  optional int32 result_per_page = 3; // Number of results to return per page.
-  map < string, Project > projects = 3 ;
-  optional double time = 5 [default = 1.6]; // How long it took
-} " in 
 
   let rec loop lexbuf = 
     match Lexer.lexer lexbuf with 
@@ -183,9 +175,9 @@ message SearchRequest {
         | Astc.Message_field f -> f
         | _ -> assert(false)
       in 
-      assert (Astc.field_name f1 = "ival"); 
+      assert (Astc_util.field_name f1 = "ival"); 
       assert (f1.Astc.field_type  = Astc.Field_type_int64);
-      assert (Astc.field_number f1 = 1); 
+      assert (Astc_util.field_number f1 = 1); 
       assert (None = f1.Astc.field_default); 
       
       let f2 = List.nth body_content 1 in 
@@ -193,9 +185,9 @@ message SearchRequest {
         | Astc.Message_field f -> f
         | _ -> assert(false)
       in 
-      assert (Astc.field_name f2 = "sval"); 
+      assert (Astc_util.field_name f2 = "sval"); 
       assert (f2.Astc.field_type  = Astc.Field_type_string);
-      assert (Astc.field_number f2 = 2); 
+      assert (Astc_util.field_number f2 = 2); 
       assert (None = f2.Astc.field_default); 
       ()
     in 
@@ -251,13 +243,68 @@ message SearchRequest {
     assert (1 = List.length body_content); 
     let f1 = List.nth body_content 0 in 
     let f1 = match f1 with | Astc.Message_field f -> f | _ -> assert(false) in 
-    assert ("mval" = Astc.field_name f1); 
-    assert (1 = Astc.field_number f1); 
+    assert ("mval" = Astc_util.field_name f1); 
+    assert (1 = Astc_util.field_number f1); 
     let unresolved = {
       Astc.scope     = ["Msg1";"Msg2"];
       Astc.type_name = "SubMessage";
     } in 
     assert ((Astc.Field_type_unresolved unresolved) = f1.Astc.field_type); 
+    ()
+  in 
+
+  let () = 
+    let s = "
+    message M1 { 
+      message M2 { message M21 { } } 
+      message M3 { message M31 { message M311 { } } } 
+    }
+    " in 
+    let ast = parse Parser.message_ s in 
+    let all_messages = Astc_util.compile_message_p1 [] ast [] in 
+    assert (6 = List.length all_messages); 
+    let filtered = Astc_util.find_all_message_in_field_scope all_messages [] in 
+    assert (1 = List.length filtered);
+    let filtered = Astc_util.find_all_message_in_field_scope all_messages ["M1"] in 
+    assert (2 = List.length filtered);
+    let filtered = Astc_util.find_all_message_in_field_scope all_messages ["M1";"M2"] in 
+    assert (1 = List.length filtered);
+    let filtered = Astc_util.find_all_message_in_field_scope all_messages ["M1";"M3"] in 
+    assert (1 = List.length filtered);
+    let filtered = Astc_util.find_all_message_in_field_scope all_messages ["M1";"M3";"M31"] in 
+    assert (1 = List.length filtered);
+    ()
+  in 
+  let () = 
+    let s = "
+    message M1 { 
+      message M2 { 
+        message M21 { 
+        } 
+      } 
+      message M3 { 
+        required M1.M2      x1 = 1; 
+        required M1.M2.M21  x2 = 2; 
+        required M1.M3      x3 = 3; 
+        required M1         x4 = 4; 
+        required M3         x5 = 5; 
+        required M2         x6 = 6; 
+        required M2.M21     x7 = 7; 
+        oneof x {
+          M1.M2      x1 = 1; 
+          M1.M2.M21  x2 = 2; 
+          M1.M3      x3 = 3; 
+          M1         x4 = 4; 
+          M3         x5 = 5; 
+          M2         x6 = 6; 
+          M2.M21     x7 = 7; 
+        }
+      }
+    }
+    " in 
+    let ast = parse Parser.message_ s in 
+    let all_messages = Astc_util.compile_message_p1 [] ast [] in 
+    List.iter (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages; 
     ()
   in 
   ()

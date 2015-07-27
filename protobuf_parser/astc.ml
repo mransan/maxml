@@ -1,5 +1,8 @@
+
+type field_scope = string list 
+
 type unresolved = {
-  scope     : string list; 
+  scope     : field_scope; 
   type_name : string; 
 }
 
@@ -27,13 +30,6 @@ type field = {
   field_default : Ast.constant option; 
 }
 
-let field_name {field_parsed; _ } = 
-  let {Ast.field_name; _ } = field_parsed in 
-  field_name 
-
-let field_number {field_parsed = {Ast.field_number;_}; _ } = 
-  field_number 
-
 type oneof_field = {
   oneof_field_parsed : Ast.oneof_field; 
   oneof_field_type : field_type; 
@@ -45,18 +41,18 @@ type oneof = {
   oneof_fields : oneof_field list; 
 }
 
-type scope_item = 
+type message_scope_item = 
   | Namespace of string 
   | Message_name of string 
 
-type scope = scope_item list 
+type message_scope = message_scope_item list 
 
 type message_body_content = 
   | Message_field of field 
   | Message_oneof_field of oneof 
 
 and message = {
-  message_scope : scope;
+  message_scope : message_scope;
   message_name : string; 
   body_content : message_body_content list; 
 }
