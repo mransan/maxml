@@ -38,7 +38,7 @@ let string_eof     = String_eof
 let letter        = ['a'-'z' 'A'-'Z']
 let identchar     = ['A'-'Z' 'a'-'z' '_' '0'-'9']
 let ident         = letter identchar *
-let full_ident    = ident ("." * ident) * 
+let full_ident    = '.' ? ident ("." * ident) * 
 (* let message_type  = '.' ? (ident '.') ident
  *)
 let int_litteral  = ['+' '-']? ['0'-'9']+ 

@@ -11,7 +11,7 @@ let unresolved_of_string s =
     try 
       let i' = String.index_from s i '.' in 
       let s' = String.sub s i (i' - i)  in 
-      loop (i'+1) (s'::l)  
+      loop (i'+1) (if s' = "" then l else s'::l)  
     with Not_found -> (String.sub s i (String.length s - i) ):: l 
   in 
   let l = loop 0 [] in 
@@ -20,6 +20,7 @@ let unresolved_of_string s =
   | hd :: tl -> {
     Astc.scope = (List.rev tl); 
     Astc.type_name = hd;
+    Astc.from_root = String.get s 0 = '.';
   }
 
 let field_type_of_string = function
@@ -192,24 +193,22 @@ let compile_message_p2 messages {
        ['Msg3'; ]                 // Top level scope
      ]
   *)
-  let search_scopes (field_scope:string list) : (string list) list = 
-    List.fold_right (fun (new_scope:string) all_scope_list -> 
-      let last_scope = List.hd all_scope_list in 
-      (new_scope::last_scope)::all_scope_list
-    ) message_scope [field_scope]
+  let search_scopes (field_scope:string list) from_root : (string list) list = 
+    if from_root
+    then [field_scope]
+    else 
+      List.fold_right (fun (new_scope:string) all_scope_list -> 
+        let last_scope = List.hd all_scope_list in 
+        (new_scope::last_scope)::all_scope_list
+      ) message_scope [field_scope]
   in 
     
-  (** This type resolution algorithm does not support for when the 
-      field scope is starting with ['.'].
-
-      TODO: add support.
-   *)
   let process_field_type = function 
-    | Astc.Field_type_unresolved {Astc.scope; Astc.type_name } -> ( 
+    | Astc.Field_type_unresolved {Astc.scope; Astc.type_name; Astc.from_root} -> ( 
       let exist = List.fold_left (fun exist scope -> 
         let exist' = process_field_in_scope messages scope type_name in 
         exist || exist'
-      ) false (search_scopes scope) in 
+      ) false (search_scopes scope from_root) in 
       
       if exist
       then () 

@@ -52,8 +52,10 @@ let () =
   in 
 
   let test_default s = 
+    (*
     Printf.printf "---- %s ----\n" s;
     loop @@ Lexing.from_string s; 
+     *)
     List.assoc "default" @@ parse Parser.field_options_ s  
   in 
   
@@ -89,6 +91,20 @@ let () =
     assert (field_type = "int32"); 
     assert (field_number = 1); 
     assert (List.length field_options = 1)
+  in
+  let () =
+    let {
+      Ast.field_name; 
+      field_type; 
+      field_label; 
+      field_options; 
+      field_number
+    } = parse Parser.normal_field_ "optional .M1 x = 1;" in 
+    assert (field_name = "x"); 
+    assert (field_label = Ast.Field_label_optional); 
+    assert (field_type = ".M1"); 
+    assert (field_number = 1); 
+    assert (List.length field_options = 0)
   in
 
   let () = 
@@ -140,7 +156,9 @@ let () =
       required Inner inner = 3; 
     }"
     in 
+    (*
     Printf.printf "---- MESSAGE ----\n";
+    *)
     let {
       Ast.message_name; 
       Ast.body_content;
@@ -248,6 +266,7 @@ let () =
     let unresolved = {
       Astc.scope     = ["Msg1";"Msg2"];
       Astc.type_name = "SubMessage";
+      Astc.from_root = false;
     } in 
     assert ((Astc.Field_type_unresolved unresolved) = f1.Astc.field_type); 
     ()
@@ -277,11 +296,11 @@ let () =
   in 
   let () = 
     let s = "
-    message M1 { 
-      message M2 { 
-        message M21 { 
-        } 
-      } 
+    message M1 {
+      message M2 {
+        message M21 {
+        }
+      }
       message M3 { 
         required M1.M2      x1 = 1; 
         required M1.M2.M21  x2 = 2; 
@@ -291,13 +310,16 @@ let () =
         required M2         x6 = 6; 
         required M2.M21     x7 = 7; 
         oneof x {
-          M1.M2      x1 = 1; 
-          M1.M2.M21  x2 = 2; 
-          M1.M3      x3 = 3; 
-          M1         x4 = 4; 
-          M3         x5 = 5; 
-          M2         x6 = 6; 
-          M2.M21     x7 = 7; 
+          M1.M2      x1  = 1; 
+          M1.M2.M21  x2  = 2; 
+          M1.M3      x3  = 3; 
+          M1         x4  = 4; 
+          M3         x5  = 5; 
+          M2         x6  = 6; 
+          M2.M21     x7  = 7; 
+          .M1        x8  = 8; 
+          .M1.M2     x9  = 9; 
+          .M1.M2.M21 x10 = 10; 
         }
       }
     }
@@ -307,4 +329,5 @@ let () =
     List.iter (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages; 
     ()
   in 
+  print_endline "\n--- Good ---";
   ()

@@ -4,6 +4,9 @@ type field_scope = string list
 type unresolved = {
   scope     : field_scope; 
   type_name : string; 
+  from_root : bool;  (** from_root indicates that the scope for the type is
+                         from the root of the type system. (ie starts with '.')
+                      *) 
 }
 
 type field_type = 
