@@ -47,7 +47,7 @@ required p1.p2.Msg1.Msg2 x = 1
 
 where n1,n2 are package names while Msg1,Msg2 are message definition. 
 
-The first type of scope we defined is for the field type in file [Astc.ml](Astc.ml):
+The first type of scope we defined is for the field type in file [astc.ml](astc.ml):
 ```OCaml
 Astc.field_scope = string list 
 ```
