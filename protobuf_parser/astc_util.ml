@@ -181,24 +181,37 @@ let compile_message_p2 messages {
     ) messages 
   in 
 
-  (*
-  List.fold_right (fun new_scope all_scope_list -> 
-    *)
-    
+  (* this method returns all the scope to search for a type starting 
+     by the most innner one first. 
 
-  (* TODO this algorithm is wrong and does not respect the resolution 
-     priority from protobuf specifications. 
+     if [message_scope] = ['Msg1'; 'Msg2'] and [field_scope] = ['Msg3'] then 
+     the following scopes will be returned:
+     [
+       ['Msg1'; 'Msg2'; 'Msg3'];  // This would be the scope of the current msg
+       ['Msg2'; 'Msg3'; ];        // Outer message scope
+       ['Msg3'; ]                 // Top level scope
+     ]
+  *)
+  let search_scopes (field_scope:string list) : (string list) list = 
+    List.fold_right (fun (new_scope:string) all_scope_list -> 
+      let last_scope = List.hd all_scope_list in 
+      (new_scope::last_scope)::all_scope_list
+    ) message_scope [field_scope]
+  in 
+    
+  (** This type resolution algorithm does not support for when the 
+      field scope is starting with ['.'].
+
+      TODO: add support.
    *)
   let process_field_type = function 
     | Astc.Field_type_unresolved {Astc.scope; Astc.type_name } -> ( 
-      let scope, exist = List.fold_right (fun message_scope_item (scope, exist) ->  
+      let exist = List.fold_left (fun exist scope -> 
         let exist' = process_field_in_scope messages scope type_name in 
-        (message_scope_item::scope, exist || exist') 
-      ) message_scope (scope, false) in 
+        exist || exist'
+      ) false (search_scopes scope) in 
       
-      let exist' = process_field_in_scope messages scope type_name in 
-      
-      if exist || exist' 
+      if exist
       then () 
       else raise Not_found
     )
