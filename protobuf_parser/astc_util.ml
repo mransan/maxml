@@ -161,6 +161,19 @@ let find_all_message_in_field_scope messages scope =
     dec_scope = scope
   ) messages 
 
+type error = 
+  | Unresolved_type of {
+    field_name: string; 
+    type_:string; 
+    message_name:string 
+  }
+
+exception Compilation_error of error  
+
+let unresolved_type field_name type_ message_name = raise (Compilation_error (Unresolved_type {
+  field_name; type_; message_name
+}))
+
 let compile_message_p2 messages {
   Astc.message_name; 
   Astc.message_scope;
@@ -203,7 +216,7 @@ let compile_message_p2 messages {
       ) message_scope [field_scope]
   in 
     
-  let process_field_type = function 
+  let process_field_type field_name message_name  = function 
     | Astc.Field_type_unresolved {Astc.scope; Astc.type_name; Astc.from_root} -> ( 
       let exist = List.fold_left (fun exist scope -> 
         let exist' = process_field_in_scope messages scope type_name in 
@@ -212,16 +225,16 @@ let compile_message_p2 messages {
       
       if exist
       then () 
-      else raise Not_found
+      else unresolved_type field_name type_name message_name 
     )
     | _ -> ()
   in
 
   List.iter (function 
-    | Astc.Message_field {Astc.field_type; _ } -> 
-      process_field_type field_type 
+    | Astc.Message_field {Astc.field_type; Astc.field_parsed } -> 
+      process_field_type field_parsed.Ast.field_name message_name field_type  
     | Astc.Message_oneof_field {Astc.oneof_fields; _ } -> 
-      List.iter (fun {Astc.oneof_field_type;_ } -> 
-        process_field_type oneof_field_type
+      List.iter (fun {Astc.oneof_field_type;Astc.oneof_field_parsed} -> 
+        process_field_type oneof_field_parsed.Ast.oneof_field_name message_name oneof_field_type
       ) oneof_fields 
   ) body_content

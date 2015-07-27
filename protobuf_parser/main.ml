@@ -329,5 +329,58 @@ let () =
     List.iter (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages; 
     ()
   in 
+
+  let assert_dont_compile f = 
+    match ignore @@ f () with 
+    | exception (Astc_util.Compilation_error (Astc_util.Unresolved_type _) )-> () 
+    | _ -> assert(false)
+  in
+
+  let test_dont_compile_msg s = 
+    let ast = parse Parser.message_ s in 
+    let all_messages = Astc_util.compile_message_p1 [] ast [] in 
+    assert_dont_compile (fun () -> 
+      List.iter (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages
+    )
+  in
+
+  let () = 
+    let s = "
+    message M1 {
+      required Dont.Exist x1 = 1; 
+    }
+    " in 
+    test_dont_compile_msg s;
+    ()
+  in 
+  let () = 
+    let s = "
+    message M1 {
+      required M1.M2 x1 = 1; 
+    }
+    " in 
+    test_dont_compile_msg s; 
+    ()
+  in 
+  let () = 
+    let s = "
+    message M1 {
+      message M2 {} 
+      required M1.M3 x1 = 1; 
+    }
+    " in 
+    test_dont_compile_msg s; 
+    ()
+  in 
+  let () = 
+    let s = "
+    message M1 {
+      message M2 {} 
+      required .M2 x1 = 1; 
+    }
+    " in 
+    test_dont_compile_msg s; 
+    ()
+  in 
   print_endline "\n--- Good ---";
   ()

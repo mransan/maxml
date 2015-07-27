@@ -7,6 +7,15 @@ val compile_field_p1: Ast.field -> Astc.field
 
 val compile_oneof_field_p1: Ast.oneof_field -> Astc.oneof_field
 
+type error = 
+  | Unresolved_type of {
+    field_name: string; 
+    type_:string; 
+    message_name:string 
+  }
+
+exception Compilation_error of error  
+
 val compile_oneof_p1: Ast.oneof -> Astc.oneof
 
 val compile_message_p1 : Astc.message_scope -> Ast.message -> Astc.message list -> Astc.message list  
