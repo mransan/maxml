@@ -268,7 +268,7 @@ let () =
       Astc.type_name = "SubMessage";
       Astc.from_root = false;
     } in 
-    assert ((Astc.Field_type_unresolved unresolved) = f1.Astc.field_type); 
+    assert ((Astc.Field_type_message unresolved) = f1.Astc.field_type); 
     ()
   in 
 
@@ -326,7 +326,7 @@ let () =
     " in 
     let ast = parse Parser.message_ s in 
     let all_messages = Astc_util.compile_message_p1 [] ast [] in 
-    List.iter (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages; 
+    ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages; 
     ()
   in 
 
@@ -340,7 +340,7 @@ let () =
     let ast = parse Parser.message_ s in 
     let all_messages = Astc_util.compile_message_p1 [] ast [] in 
     assert_dont_compile (fun () -> 
-      List.iter (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages
+      ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages
     )
   in
 

@@ -39,7 +39,25 @@ let field_type_of_string = function
  | "bool"      -> Astc.Field_type_bool 
  | "string"    -> Astc.Field_type_string 
  | "bytes"     -> Astc.Field_type_bytes 
- | s  -> Astc.Field_type_unresolved (unresolved_of_string s) 
+ | s  -> Astc.Field_type_message (unresolved_of_string s) 
+
+let map_field_type : 'a Astc.field_type  -> 'b Astc.field_type = function  
+ | Astc.Field_type_double     -> Astc.Field_type_double    
+ | Astc.Field_type_float      -> Astc.Field_type_float 
+ | Astc.Field_type_int32      -> Astc.Field_type_int32 
+ | Astc.Field_type_int64      -> Astc.Field_type_int64 
+ | Astc.Field_type_uint32     -> Astc.Field_type_uint32 
+ | Astc.Field_type_uint64     -> Astc.Field_type_uint64
+ | Astc.Field_type_sint32     -> Astc.Field_type_sint32 
+ | Astc.Field_type_sint64     -> Astc.Field_type_sint64 
+ | Astc.Field_type_fixed32    -> Astc.Field_type_fixed32 
+ | Astc.Field_type_fixed64    -> Astc.Field_type_fixed64 
+ | Astc.Field_type_sfixed32   -> Astc.Field_type_sfixed32 
+ | Astc.Field_type_sfixed64   -> Astc.Field_type_sfixed64
+ | Astc.Field_type_bool       -> Astc.Field_type_bool 
+ | Astc.Field_type_string     -> Astc.Field_type_string 
+ | Astc.Field_type_bytes      -> Astc.Field_type_bytes 
+ | _ -> failwith "Programmatic error"
 
 let compile_default constant = function  
   | Astc.Field_type_double 
@@ -79,7 +97,7 @@ let compile_default constant = function
    | _ -> failwith "unsuported default 6"
   ) 
   | Astc.Field_type_bytes -> failwith "unsuported default 7" 
-  | Astc.Field_type_unresolved _ -> failwith "unsuported default 8" 
+  | Astc.Field_type_message _ -> failwith "unsuported default 8" 
 
 let get_default field_options field_type = 
   match List.assoc "default" field_options with
@@ -126,9 +144,10 @@ let compile_oneof_p1 ({
 }
 
 let rec compile_message_p1 message_scope ({
+  Ast.id;
   Ast.message_name; 
   Ast.body_content; 
-}) (all_messages:Astc.message list) = 
+}) (all_messages:Astc.unresolved Astc.message list) = 
   
   let sub_scope = message_scope @ [ Astc.Message_name message_name] in 
   
@@ -147,6 +166,7 @@ let rec compile_message_p1 message_scope ({
   let body_content = List.rev body_content in 
 
   all_messages @ ({
+    Astc.id; 
     Astc.message_scope;
     Astc.message_name; 
     Astc.body_content;
@@ -174,10 +194,10 @@ let unresolved_type field_name type_ message_name = raise (Compilation_error (Un
   field_name; type_; message_name
 }))
 
-let compile_message_p2 messages {
+let compile_message_p2 messages ({
   Astc.message_name; 
   Astc.message_scope;
-  Astc.body_content} = 
+  Astc.body_content} as message)  = 
 
   (* stringify the message scope so that it can 
      be used with the field scope. 
@@ -190,9 +210,12 @@ let compile_message_p2 messages {
 
   let process_field_in_scope messages scope type_name = 
     let messages  = find_all_message_in_field_scope messages scope in 
-    List.exists (fun {Astc.message_name; _ } -> 
-      type_name = message_name 
-    ) messages 
+    try 
+      let {Astc.id ; _ }  =  List.find (fun {Astc.message_name; _ } -> 
+        type_name = message_name 
+      ) messages in
+      Some id 
+     with | Not_found -> None 
   in 
 
   (* this method returns all the scope to search for a type starting 
@@ -217,24 +240,36 @@ let compile_message_p2 messages {
   in 
     
   let process_field_type field_name message_name  = function 
-    | Astc.Field_type_unresolved {Astc.scope; Astc.type_name; Astc.from_root} -> ( 
-      let exist = List.fold_left (fun exist scope -> 
-        let exist' = process_field_in_scope messages scope type_name in 
-        exist || exist'
-      ) false (search_scopes scope from_root) in 
+    | Astc.Field_type_message {Astc.scope; Astc.type_name; Astc.from_root} -> ( 
+      let id  = List.fold_left (fun id scope -> 
+        match id with 
+        | Some _ -> id 
+        | None   -> process_field_in_scope messages scope type_name
+      ) None (search_scopes scope from_root) in 
       
-      if exist
-      then () 
-      else unresolved_type field_name type_name message_name 
+      match id with 
+      | Some id -> (Astc.Field_type_message id:Astc.resolved Astc.field_type) 
+      | None    -> unresolved_type field_name type_name message_name 
     )
-    | _ -> ()
+    | field_type -> map_field_type field_type
   in
 
-  List.iter (function 
-    | Astc.Message_field {Astc.field_type; Astc.field_parsed } -> 
-      process_field_type field_parsed.Ast.field_name message_name field_type  
-    | Astc.Message_oneof_field {Astc.oneof_fields; _ } -> 
-      List.iter (fun {Astc.oneof_field_type;Astc.oneof_field_parsed} -> 
-        process_field_type oneof_field_parsed.Ast.oneof_field_name message_name oneof_field_type
-      ) oneof_fields 
-  ) body_content
+  let body_content = List.map (function 
+    | Astc.Message_field ({Astc.field_type; Astc.field_parsed; _ } as field) ->
+      let field_type = process_field_type 
+        field_parsed.Ast.field_name 
+        message_name 
+        field_type  in 
+      Astc.Message_field {field with Astc.field_type}  
+    | Astc.Message_oneof_field ({Astc.oneof_fields; _ } as oneof )  -> 
+      let oneof_fields = List.map (fun ({Astc.oneof_field_type;Astc.oneof_field_parsed} as field) -> 
+        let oneof_field_type = process_field_type 
+          oneof_field_parsed.Ast.oneof_field_name 
+          message_name 
+          oneof_field_type in 
+        {field with Astc.oneof_field_type } 
+      ) oneof_fields in  
+      Astc.Message_oneof_field {oneof with Astc.oneof_fields } 
+  ) body_content in 
+  {message with Astc.body_content; } 
+

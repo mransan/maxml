@@ -9,7 +9,9 @@ type unresolved = {
                       *) 
 }
 
-type field_type = 
+type resolved = int 
+
+type 'a field_type = 
  | Field_type_double 
  | Field_type_float 
  | Field_type_int32 
@@ -25,23 +27,23 @@ type field_type =
  | Field_type_bool 
  | Field_type_string 
  | Field_type_bytes 
- | Field_type_unresolved of unresolved 
+ | Field_type_message of 'a 
 
-type field = {
+type 'a field = {
   field_parsed : Ast.field; 
-  field_type : field_type; 
+  field_type : 'a field_type; 
   field_default : Ast.constant option; 
 }
 
-type oneof_field = {
+type 'a oneof_field = {
   oneof_field_parsed : Ast.oneof_field; 
-  oneof_field_type : field_type; 
+  oneof_field_type : 'a field_type; 
   oneof_field_default : Ast.constant option;
 }
 
-type oneof = {
+type 'a oneof = {
   oneof_name : string; 
-  oneof_fields : oneof_field list; 
+  oneof_fields : 'a oneof_field list; 
 }
 
 type message_scope_item = 
@@ -50,12 +52,13 @@ type message_scope_item =
 
 type message_scope = message_scope_item list 
 
-type message_body_content = 
-  | Message_field of field 
-  | Message_oneof_field of oneof 
+type 'a message_body_content = 
+  | Message_field of 'a field 
+  | Message_oneof_field of 'a oneof 
 
-and message = {
+and 'a message = {
+  id : int ; 
   message_scope : message_scope;
   message_name : string; 
-  body_content : message_body_content list; 
+  body_content : 'a message_body_content list; 
 }

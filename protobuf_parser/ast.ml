@@ -41,6 +41,7 @@ type message_body_content =
   | Message_sub of message 
 
 and message = {
+  id : int; 
   message_name : string; 
   body_content : message_body_content list; 
 }

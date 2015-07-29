@@ -23,10 +23,15 @@ let message_body_field field =  Ast.Message_field field
 let message_body_oneof_field field =  Ast.Message_oneof_field   field  
 let message_body_sub message  =  Ast.Message_sub message 
 
-let message ~content name = {
-  Ast.message_name = name; 
-  body_content = content;
-} 
+let message_counter = ref 0
+
+let message ~content name = 
+  message_counter := !message_counter + 1; 
+  {
+    Ast.id = !message_counter;
+    Ast.message_name = name; 
+    body_content = content;
+  } 
 
 let rec message_printer ?level:(level = 0) {
   Ast.message_name; 
