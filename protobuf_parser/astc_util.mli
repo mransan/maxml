@@ -1,11 +1,8 @@
 
-val field_name   : 'a Astc.field -> string 
+val field_name   : ('a, 'b)  Astc.field -> string 
+val field_number : ('a, 'b)  Astc.field -> int
 
-val field_number : 'a Astc.field -> int
-
-val compile_field_p1: Ast.field -> Astc.unresolved Astc.field 
-
-val compile_oneof_field_p1: Ast.oneof_field -> Astc.unresolved Astc.oneof_field
+val compile_field_p1: 'a Ast.field -> (Astc.unresolved, 'a ) Astc.field 
 
 type error = 
   | Unresolved_type of {

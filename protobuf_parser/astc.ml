@@ -29,21 +29,15 @@ type 'a field_type =
   | Field_type_bytes 
   | Field_type_message of 'a 
 
-type 'a field = {
-  field_parsed : Ast.field; 
+type ('a, 'b) field = {
+  field_parsed : 'b Ast.field; 
   field_type : 'a field_type; 
   field_default : Ast.constant option; 
 }
 
-type 'a oneof_field = {
-  oneof_field_parsed : Ast.oneof_field; 
-  oneof_field_type : 'a field_type; 
-  oneof_field_default : Ast.constant option;
-}
-
 type 'a oneof = {
   oneof_name : string; 
-  oneof_fields : 'a oneof_field list; 
+  oneof_fields : ('a, Ast.oneof_label) field list; 
 }
 
 type message_scope_item = 
@@ -53,7 +47,7 @@ type message_scope_item =
 type message_scope = message_scope_item list 
 
 type 'a message_body_content = 
-  | Message_field of 'a field 
+  | Message_field       of ('a, Ast.field_label) field 
   | Message_oneof_field of 'a oneof 
 
 and 'a message = {

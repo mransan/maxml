@@ -87,7 +87,7 @@ let () =
       field_number
     } = parse Parser.normal_field_ "optional int32 x = 1 [default=1];" in 
     assert (field_name = "x"); 
-    assert (field_label = Ast.Field_label_optional); 
+    assert (field_label = `Optional); 
     assert (field_type = "int32"); 
     assert (field_number = 1); 
     assert (List.length field_options = 1)
@@ -101,7 +101,7 @@ let () =
       field_number
     } = parse Parser.normal_field_ "optional .M1 x = 1;" in 
     assert (field_name = "x"); 
-    assert (field_label = Ast.Field_label_optional); 
+    assert (field_label = `Optional); 
     assert (field_type = ".M1"); 
     assert (field_number = 1); 
     assert (List.length field_options = 0)
@@ -121,25 +121,25 @@ let () =
     assert (oneof_name = "foo"); 
     assert (List.length oneof_fields = 2);
     let {
-      Ast.oneof_field_name; 
-      Ast.oneof_field_number; 
-      Ast.oneof_field_type; 
-      Ast.oneof_field_options; 
+      Ast.field_name; 
+      Ast.field_number; 
+      Ast.field_type; 
+      Ast.field_options; 
     } = List.nth oneof_fields 0 in 
-    assert (oneof_field_name = "name"); 
-    assert (oneof_field_type = "string"); 
-    assert (oneof_field_number= 4); 
-    assert (List.length oneof_field_options = 0); 
+    assert (field_name = "name"); 
+    assert (field_type = "string"); 
+    assert (field_number= 4); 
+    assert (List.length field_options = 0); 
     let {
-      Ast.oneof_field_name; 
-      Ast.oneof_field_number; 
-      Ast.oneof_field_type; 
-      Ast.oneof_field_options; 
+      Ast.field_name; 
+      Ast.field_number; 
+      Ast.field_type; 
+      Ast.field_options; 
     } = List.nth oneof_fields 1 in 
-    assert (oneof_field_name = "sub_message"); 
-    assert (oneof_field_type = "SubMessage"); 
-    assert (oneof_field_number= 9); 
-    assert (List.length oneof_field_options = 1); 
+    assert (field_name = "sub_message"); 
+    assert (field_type = "SubMessage"); 
+    assert (field_number= 9); 
+    assert (List.length field_options = 1); 
     ()
   in
   let () = 

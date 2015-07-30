@@ -120,27 +120,12 @@ let compile_field_p1 ({
     Astc.field_default;
   }
 
-let compile_oneof_field_p1 ({
-  Ast.oneof_field_name;
-  Ast.oneof_field_number;
-  Ast.oneof_field_type;
-  Ast.oneof_field_options;
-} as oneof_field_parsed) = 
-  
-  let oneof_field_type = field_type_of_string oneof_field_type in 
-  let oneof_field_default = get_default oneof_field_options oneof_field_type in 
-  {
-    Astc.oneof_field_parsed;
-    Astc.oneof_field_type;
-    Astc.oneof_field_default;
-  }
-
 let compile_oneof_p1 ({
   Ast.oneof_name; 
   Ast.oneof_fields;
 }) = {
   Astc.oneof_name; 
-  Astc.oneof_fields = List.map compile_oneof_field_p1 oneof_fields; 
+  Astc.oneof_fields = List.map compile_field_p1 oneof_fields; 
 }
 
 let rec compile_message_p1 message_scope ({
@@ -291,16 +276,16 @@ let compile_message_p2 messages ({
       ) 
     | Astc.Message_oneof_field ({Astc.oneof_fields; _ } as oneof )  -> 
       let number_index, oneof_fields = List.fold_left (fun (number_index, oneof_fields) field -> 
-        let {Astc.oneof_field_type; Astc.oneof_field_parsed;_} = field in 
-        let field_name = oneof_field_parsed.Ast.oneof_field_name in
-        let field_number = oneof_field_parsed.Ast.oneof_field_number in 
-        let oneof_field_type = process_field_type 
+        let {Astc.field_type; Astc.field_parsed;_} = field in 
+        let field_name = field_parsed.Ast.field_name in
+        let field_number = field_parsed.Ast.field_number in 
+        let field_type = process_field_type 
           field_name
           message_name 
-          oneof_field_type in 
+          field_type in 
         (
           process_field_number number_index field_number field_name, 
-          {field with Astc.oneof_field_type }:: oneof_fields 
+          {field with Astc.field_type }:: oneof_fields 
         )
       ) (number_index, []) oneof_fields in  
       let oneof_fields = List.rev oneof_fields in 

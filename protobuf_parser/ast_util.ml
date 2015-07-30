@@ -8,10 +8,11 @@ let field ?options:(options =[]) ~label ~number ~type_ name = {
 } 
 
 let oneof_field ?options:(options =[]) ~number ~type_ name = {
-  Ast.oneof_field_name = name; 
-  Ast.oneof_field_number = number;
-  Ast.oneof_field_type = type_; 
-  Ast.oneof_field_options = options;
+  Ast.field_name = name; 
+  Ast.field_number = number;
+  Ast.field_type = type_; 
+  Ast.field_options = options;
+  Ast.field_label = `Oneof
 } 
 
 let oneof ~fields name = {

@@ -28,7 +28,7 @@
 %type <Ast.field_options> field_options_
 
 %start normal_field_ 
-%type <Ast.field> normal_field_
+%type <Ast.field_label Ast.field> normal_field_
 
 %start oneof_
 %type <Ast.oneof> oneof_
@@ -92,9 +92,9 @@ normal_field :
   } 
 
 label :
-  | REQUIRED { Ast.Field_label_required }  
-  | REPEATED { Ast.Field_label_repeated }
-  | OPTIONAL { Ast.Field_label_optional }
+  | REQUIRED { `Required }  
+  | REPEATED { `Repeated }
+  | OPTIONAL { `Optional }
 
 field_options : 
     LBRACKET field_option_list RBRACKET { $2 }; 
