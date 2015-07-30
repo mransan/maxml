@@ -147,7 +147,7 @@ let rec compile_message_p1 message_scope ({
   Ast.id;
   Ast.message_name; 
   Ast.body_content; 
-}) (all_messages:Astc.unresolved Astc.message list) = 
+})  = 
   
   let sub_scope = message_scope @ [ Astc.Message_name message_name] in 
   
@@ -159,18 +159,18 @@ let rec compile_message_p1 message_scope ({
         let sub = Astc.Message_oneof_field (compile_oneof_p1 o) in 
         (sub :: body_content, all_messages)
     | Ast.Message_sub m -> 
-        let all_sub = compile_message_p1 sub_scope m [] in 
+        let all_sub = compile_message_p1 sub_scope m in 
         (body_content,  all_messages @ all_sub)
   ) ([], []) body_content in
 
   let body_content = List.rev body_content in 
 
-  all_messages @ ({
+  {
     Astc.id; 
     Astc.message_scope;
     Astc.message_name; 
     Astc.body_content;
-  } :: all_sub) 
+  } :: all_sub
 
 let find_all_message_in_field_scope messages scope = 
   List.filter (fun { Astc.message_scope;_ } -> 
@@ -187,17 +187,40 @@ type error =
     type_:string; 
     message_name:string 
   }
+  | Duplicated_field_number of {
+    field_name: string; 
+    previous_field_name  : string;
+    message_name: string; 
+  }
 
 exception Compilation_error of error  
 
-let unresolved_type field_name type_ message_name = raise (Compilation_error (Unresolved_type {
-  field_name; type_; message_name
-}))
+let unresolved_type field_name type_ message_name = 
+  raise (Compilation_error (Unresolved_type {
+    field_name; 
+    type_; 
+    message_name
+  }))
+
+let duplicated_field_number field_name previous_field_name message_name  = 
+  raise (Compilation_error (Duplicated_field_number {
+    field_name; 
+    previous_field_name; 
+    message_name;
+  }))
 
 let compile_message_p2 messages ({
   Astc.message_name; 
   Astc.message_scope;
   Astc.body_content} as message)  = 
+
+
+  let process_field_number (number_index:(int*string) list) number name = 
+    try 
+      let previous_field_name = List.assoc number number_index in 
+      duplicated_field_number name previous_field_name message_name
+    with | Not_found ->  (number,name)::number_index
+  in
 
   (* stringify the message scope so that it can 
      be used with the field scope. 
@@ -254,22 +277,37 @@ let compile_message_p2 messages ({
     | field_type -> map_field_type field_type
   in
 
-  let body_content = List.map (function 
+  let _, body_content = List.fold_left (fun (number_index, body_content) -> function
     | Astc.Message_field ({Astc.field_type; Astc.field_parsed; _ } as field) ->
+      let field_name  = field_parsed.Ast.field_name in 
+      let field_number= field_parsed.Ast.field_number in 
       let field_type = process_field_type 
-        field_parsed.Ast.field_name 
+        field_name
         message_name 
         field_type  in 
-      Astc.Message_field {field with Astc.field_type}  
+      (
+        process_field_number number_index field_number field_name, 
+        Astc.Message_field {field with Astc.field_type} :: body_content
+      ) 
     | Astc.Message_oneof_field ({Astc.oneof_fields; _ } as oneof )  -> 
-      let oneof_fields = List.map (fun ({Astc.oneof_field_type;Astc.oneof_field_parsed} as field) -> 
+      let number_index, oneof_fields = List.fold_left (fun (number_index, oneof_fields) field -> 
+        let {Astc.oneof_field_type; Astc.oneof_field_parsed;_} = field in 
+        let field_name = oneof_field_parsed.Ast.oneof_field_name in
+        let field_number = oneof_field_parsed.Ast.oneof_field_number in 
         let oneof_field_type = process_field_type 
-          oneof_field_parsed.Ast.oneof_field_name 
+          field_name
           message_name 
           oneof_field_type in 
-        {field with Astc.oneof_field_type } 
-      ) oneof_fields in  
-      Astc.Message_oneof_field {oneof with Astc.oneof_fields } 
-  ) body_content in 
-  {message with Astc.body_content; } 
-
+        (
+          process_field_number number_index field_number field_name, 
+          {field with Astc.oneof_field_type }:: oneof_fields 
+        )
+      ) (number_index, []) oneof_fields in  
+      let oneof_fields = List.rev oneof_fields in 
+      (
+        number_index,
+        Astc.Message_oneof_field {oneof with Astc.oneof_fields } :: body_content 
+      )
+  ) ([],[]) body_content in 
+  let body_content = List.rev body_content in 
+  {message with Astc.body_content; }

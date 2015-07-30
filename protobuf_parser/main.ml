@@ -175,7 +175,7 @@ let () =
     }"
     in 
     let ast  = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast [] in  
+    let all_messages = Astc_util.compile_message_p1 [] ast in  
     assert (List.length all_messages = 1);
     let {
       Astc.message_scope; 
@@ -219,7 +219,7 @@ let () =
     }"
     in 
     let ast  = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast [] in  
+    let all_messages = Astc_util.compile_message_p1 [] ast in  
     assert (List.length all_messages = 2);
     let {
       Astc.message_scope; 
@@ -249,7 +249,7 @@ let () =
     }"
     in 
     let ast  = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast [] in  
+    let all_messages = Astc_util.compile_message_p1 [] ast in  
     assert (List.length all_messages = 1);
     let {
       Astc.message_scope; 
@@ -280,7 +280,7 @@ let () =
     }
     " in 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast [] in 
+    let all_messages = Astc_util.compile_message_p1 [] ast in 
     assert (6 = List.length all_messages); 
     let filtered = Astc_util.find_all_message_in_field_scope all_messages [] in 
     assert (1 = List.length filtered);
@@ -310,36 +310,36 @@ let () =
         required M2         x6 = 6; 
         required M2.M21     x7 = 7; 
         oneof x {
-          M1.M2      x1  = 1; 
-          M1.M2.M21  x2  = 2; 
-          M1.M3      x3  = 3; 
-          M1         x4  = 4; 
-          M3         x5  = 5; 
-          M2         x6  = 6; 
-          M2.M21     x7  = 7; 
-          .M1        x8  = 8; 
-          .M1.M2     x9  = 9; 
-          .M1.M2.M21 x10 = 10; 
+          M1.M2      x1  = 11; 
+          M1.M2.M21  x2  = 12; 
+          M1.M3      x3  = 13; 
+          M1         x4  = 14; 
+          M3         x5  = 15; 
+          M2         x6  = 16; 
+          M2.M21     x7  = 17; 
+          .M1        x8  = 18; 
+          .M1.M2     x9  = 19; 
+          .M1.M2.M21 x10 = 110; 
         }
       }
     }
     " in 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast [] in 
+    let all_messages = Astc_util.compile_message_p1 [] ast in 
     ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages; 
     ()
   in 
 
-  let assert_dont_compile f = 
+  let assert_unresolved f = 
     match ignore @@ f () with 
     | exception (Astc_util.Compilation_error (Astc_util.Unresolved_type _) )-> () 
     | _ -> assert(false)
   in
 
-  let test_dont_compile_msg s = 
+  let test_unresolved_msg s = 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast [] in 
-    assert_dont_compile (fun () -> 
+    let all_messages = Astc_util.compile_message_p1 [] ast in 
+    assert_unresolved (fun () -> 
       ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages
     )
   in
@@ -350,7 +350,7 @@ let () =
       required Dont.Exist x1 = 1; 
     }
     " in 
-    test_dont_compile_msg s;
+    test_unresolved_msg s;
     ()
   in 
   let () = 
@@ -359,7 +359,7 @@ let () =
       required M1.M2 x1 = 1; 
     }
     " in 
-    test_dont_compile_msg s; 
+    test_unresolved_msg s; 
     ()
   in 
   let () = 
@@ -369,7 +369,7 @@ let () =
       required M1.M3 x1 = 1; 
     }
     " in 
-    test_dont_compile_msg s; 
+    test_unresolved_msg s; 
     ()
   in 
   let () = 
@@ -379,7 +379,80 @@ let () =
       required .M2 x1 = 1; 
     }
     " in 
-    test_dont_compile_msg s; 
+    test_unresolved_msg s; 
+    ()
+  in 
+
+  let assert_duplicate f = 
+    match ignore @@ f () with 
+    | exception (Astc_util.Compilation_error (Astc_util.Duplicated_field_number _) )-> () 
+    | _ -> assert(false)
+  in
+
+  let test_duplicate s = 
+    let ast = parse Parser.message_ s in 
+    let all_messages = Astc_util.compile_message_p1 [] ast in 
+    assert_duplicate (fun () -> 
+      ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages
+    )
+  in
+  let () = 
+    let s = "
+    message M1 {
+      required uint32 x = 1; 
+      required uint32 y = 1; 
+    }
+    " in 
+    test_duplicate s; 
+    ()
+  in 
+  let () = 
+    let s = "
+    message M1 {
+      required uint32 x = 100;
+      required uint32 y = 1; 
+      required uint32 z = 100; 
+    }
+    " in 
+    test_duplicate s; 
+    ()
+  in 
+  let () = 
+    let s = "
+    message M1 {
+      required uint32 x = 1;
+      oneof o {
+        uint32 y = 1;
+      }
+    }
+    " in 
+    test_duplicate s; 
+    ()
+  in 
+  let () = 
+    let s = "
+    message M1 {
+      oneof o {
+        uint32 y = 1;
+      }
+      required uint32 x = 1;
+    }
+    " in 
+    test_duplicate s; 
+    ()
+  in 
+  let () = 
+    let s = "
+    message M1 {
+      oneof o {
+        uint32 x = 1;
+      }
+      oneof o {
+        uint32 y = 1;
+      }
+    }
+    " in 
+    test_duplicate s; 
     ()
   in 
   print_endline "\n--- Good ---";

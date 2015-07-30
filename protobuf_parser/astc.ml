@@ -12,22 +12,22 @@ type unresolved = {
 type resolved = int 
 
 type 'a field_type = 
- | Field_type_double 
- | Field_type_float 
- | Field_type_int32 
- | Field_type_int64 
- | Field_type_uint32 
- | Field_type_uint64
- | Field_type_sint32 
- | Field_type_sint64 
- | Field_type_fixed32 
- | Field_type_fixed64 
- | Field_type_sfixed32 
- | Field_type_sfixed64
- | Field_type_bool 
- | Field_type_string 
- | Field_type_bytes 
- | Field_type_message of 'a 
+  | Field_type_double 
+  | Field_type_float 
+  | Field_type_int32 
+  | Field_type_int64 
+  | Field_type_uint32 
+  | Field_type_uint64
+  | Field_type_sint32 
+  | Field_type_sint64 
+  | Field_type_fixed32 
+  | Field_type_fixed64 
+  | Field_type_sfixed32 
+  | Field_type_sfixed64
+  | Field_type_bool 
+  | Field_type_string 
+  | Field_type_bytes 
+  | Field_type_message of 'a 
 
 type 'a field = {
   field_parsed : Ast.field; 

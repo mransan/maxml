@@ -13,6 +13,11 @@ type error =
     type_:string; 
     message_name:string 
   }
+  | Duplicated_field_number of {
+    field_name: string; 
+    previous_field_name  : string;
+    message_name: string; 
+  }
 
 exception Compilation_error of error  
 
@@ -21,7 +26,6 @@ val compile_oneof_p1: Ast.oneof -> Astc.unresolved Astc.oneof
 val compile_message_p1 : 
   Astc.message_scope -> 
   Ast.message ->
-  Astc.unresolved Astc.message list -> 
   Astc.unresolved Astc.message list  
 
 val find_all_message_in_field_scope : 
