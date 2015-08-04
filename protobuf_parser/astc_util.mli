@@ -1,6 +1,8 @@
 
 val field_name   : ('a, 'b)  Astc.field -> string 
 val field_number : ('a, 'b)  Astc.field -> int
+val field_type   : ('a, 'b)  Astc.field -> 'a Astc.field_type
+val field_label  : ('a, 'b)  Astc.field -> 'b 
 
 val compile_field_p1: 'a Ast.field -> (Astc.unresolved, 'a ) Astc.field 
 
@@ -14,6 +16,10 @@ type error =
     field_name: string; 
     previous_field_name  : string;
     message_name: string; 
+  }
+  | Invalid_default_value of {
+    field_name: string; 
+    info: string; 
   }
 
 exception Compilation_error of error  

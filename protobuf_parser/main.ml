@@ -226,20 +226,20 @@ let () =
       Astc.message_name;
       Astc.body_content; 
     } = List.hd all_messages in 
-    assert ([] = message_scope);
-    assert ("Test" = message_name); 
-    assert (0 = List.length body_content); 
-    let {
-      Astc.message_scope; 
-      Astc.message_name;
-      Astc.body_content; 
-    } = List.nth all_messages 1 in 
     assert (1 = List.length message_scope);
     assert ("Inner" = message_name); 
     assert (2 = List.length body_content); 
     test_fields body_content; 
     let expected_scope = [ Astc.Message_name "Test" ] in 
     assert(expected_scope = message_scope);
+    let {
+      Astc.message_scope; 
+      Astc.message_name;
+      Astc.body_content; 
+    } = List.nth all_messages 1 in 
+    assert ([] = message_scope);
+    assert ("Test" = message_name); 
+    assert (0 = List.length body_content); 
     ()
   in
   let () = 
@@ -302,6 +302,7 @@ let () =
         }
       }
       message M3 { 
+       
         required M1.M2      x1 = 1; 
         required M1.M2.M21  x2 = 2; 
         required M1.M3      x3 = 3; 
@@ -310,18 +311,19 @@ let () =
         required M2         x6 = 6; 
         required M2.M21     x7 = 7; 
         oneof x {
-          M1.M2      x1  = 11; 
-          M1.M2.M21  x2  = 12; 
-          M1.M3      x3  = 13; 
-          M1         x4  = 14; 
-          M3         x5  = 15; 
-          M2         x6  = 16; 
-          M2.M21     x7  = 17; 
-          .M1        x8  = 18; 
-          .M1.M2     x9  = 19; 
-          .M1.M2.M21 x10 = 110; 
+          M1.M2      xo1  = 11; 
+          M1.M2.M21  xo2  = 12; 
+          M1.M3      xo3  = 13; 
+          M1         xo4  = 14; 
+          M3         xo5  = 15; 
+          M2         xo6  = 16; 
+          M2.M21     xo7  = 17; 
+          .M1        xo8  = 18; 
+          .M1.M2     xo9  = 19; 
+          .M1.M2.M21 xo10 = 110; 
         }
       }
+      required M2 vm2 = 1;
     }
     " in 
     let ast = parse Parser.message_ s in 
@@ -454,6 +456,201 @@ let () =
     " in 
     test_duplicate s; 
     ()
+  in 
+  let () = 
+    let s = "
+    message M1 {
+      oneof o {
+        uint32 y = 1;
+      }
+      oneof o {
+        uint32 y = 2;
+      }
+    }
+    " in 
+    test_duplicate s; 
+    ()
+  in 
+  let () = 
+    let message_scope = [] in 
+    let oneof_name = "test" in 
+    assert ("test" = Backend_ocaml.type_name message_scope oneof_name);
+    ()
+  in 
+  let () = 
+    let message_scope = [] in 
+    let oneof_name = "TEST" in 
+    assert ("test" = Backend_ocaml.type_name message_scope oneof_name);
+    ()
+  in 
+  let () = 
+    let message_scope = [] in 
+    let oneof_name = "tEST" in 
+    assert ("test" = Backend_ocaml.type_name message_scope oneof_name);
+    ()
+  in 
+  let () = 
+    let message_scope = [] in 
+    let oneof_name = "tEST_Max" in 
+    assert ("test_max" = Backend_ocaml.type_name message_scope oneof_name);
+    ()
+  in 
+  let () = 
+    let message_scope = ["a"] in 
+    let oneof_name = "test" in 
+    assert ("a_test" = Backend_ocaml.type_name message_scope oneof_name);
+    ()
+  in 
+  let () = 
+    let message_scope = ["abc"] in 
+    let oneof_name = "test" in 
+    assert ("abc_test" = Backend_ocaml.type_name message_scope oneof_name);
+    ()
+  in 
+  let () = 
+    let message_scope = ["abc"; "def"] in 
+    let oneof_name = "test" in 
+    assert ("abc_def_test" = Backend_ocaml.type_name message_scope oneof_name);
+    ()
+  in 
+
+  let () = 
+    let s = "test" in 
+    assert("Test" = Backend_ocaml.constructor_name s);
+    ()
+  in 
+  let () = 
+    let s = "testBlah" in 
+    assert("Testblah" = Backend_ocaml.constructor_name s);
+    ()
+    (* TODO this could really be improved to be Test_blah *)
+  in 
+  let () = 
+    let message_scope = [
+      Astc.Namespace "ab";
+      Astc.Namespace "cd"; 
+      Astc.Message_name "foo";
+      Astc.Message_name "bar";
+    ] in 
+    let message_name = "test" in 
+    assert("Ab.Cd.foo_bar_test" = Backend_ocaml.type_name_of_message message_scope message_name);
+    ()
+  in 
+  let () = 
+    let message_scope = [
+      Astc.Namespace "ab";
+      Astc.Namespace "cd"; 
+    ] in 
+    let message_name = "test" in 
+    assert("Ab.Cd.test" = Backend_ocaml.type_name_of_message message_scope message_name);
+    ()
+  in 
+  let () = 
+    let message_scope = [
+      Astc.Message_name "foo";
+      Astc.Message_name "bar";
+    ] in 
+    let message_name = "test" in 
+    assert("foo_bar_test" = Backend_ocaml.type_name_of_message message_scope message_name);
+    ()
+  in 
+  let module BO = Backend_ocaml in 
+  let compile_to_ocaml s = 
+    let ast = parse Parser.message_ s in 
+    let all_messages = Astc_util.compile_message_p1 [] ast in 
+    let all_messages = List.map (fun m -> 
+      Astc_util.compile_message_p2 all_messages m
+    ) all_messages in 
+    List.flatten @@ List.map (fun m -> 
+      BO.compile all_messages m  
+    ) all_messages
+  in 
+  let () = 
+    let s = "
+    message M {
+      required uint32 v1 = 1; 
+      required string v2 = 2; 
+      optional bool   v3 = 3; 
+      optional float  v4 = 4; 
+      optional double v5 = 5; 
+      required bytes  v6 = 6; 
+    }"
+    in 
+    let ocaml_types = compile_to_ocaml s in 
+    assert(1 = List.length ocaml_types); 
+    assert(BO.Record {
+      BO.record_name = "m"; 
+      BO.fields = [
+        {BO.field_type = BO.Int; BO.field_name = "v1"; BO.is_option = false; };
+        {BO.field_type = BO.String; BO.field_name = "v2"; BO.is_option = false; };
+        {BO.field_type = BO.Bool; BO.field_name = "v3"; BO.is_option = true; };
+        {BO.field_type = BO.Float; BO.field_name = "v4"; BO.is_option = true; };
+        {BO.field_type = BO.Float; BO.field_name = "v5"; BO.is_option = true; };
+        {BO.field_type = BO.Bytes; BO.field_name = "v6"; BO.is_option = false; };
+      ];
+    } = List.hd ocaml_types);
+    () 
+  in 
+  let () = 
+    let s = "
+    message M1 {
+      required uint32 m11 = 1; 
+      message M2 {
+        required uint32 m21 = 1; 
+      }
+      required M2 sub = 2;
+    }
+    "
+    in 
+    let ocaml_types = compile_to_ocaml s in 
+    assert(2 = List.length ocaml_types); 
+    assert(
+      BO.Record {
+        BO.record_name = "m1_m2"; 
+        BO.fields = [
+          {BO.field_type = BO.Int; BO.field_name = "m21"; BO.is_option = false; };
+        ];
+      } = List.nth ocaml_types 0);
+    assert(
+      BO.Record {
+        BO.record_name = "m1"; 
+        BO.fields = [
+          {BO.field_type = BO.Int; BO.field_name = "m11"; BO.is_option = false; };
+          {BO.field_type = BO.User_defined "m1_m2"; BO.field_name = "sub"; BO.is_option = false; };
+        ];
+      } = List.nth ocaml_types 1);
+    () 
+  in 
+  let () = 
+    let s = "
+    message M1 {
+      oneof o1 { 
+        uint32 intv    = 1; 
+        string stringv = 2; 
+      }
+      required uint32 v1 = 3;
+    }
+    "
+    in 
+    let ocaml_types = compile_to_ocaml s in 
+    assert(2 = List.length ocaml_types); 
+    assert(
+      BO.Variant {
+        BO.variant_name  = "m1_o1"; 
+        BO.constructors = [
+          {BO.field_type = BO.Int; BO.field_name = "Intv"; BO.is_option = false; };
+          {BO.field_type = BO.String; BO.field_name = "Stringv"; BO.is_option = false; };
+        ];
+      } = List.nth ocaml_types 0);
+    assert(
+      BO.Record {
+        BO.record_name = "m1"; 
+        BO.fields = [
+          {BO.field_type = BO.User_defined "m1_o1"; BO.field_name = "o1"; BO.is_option = false; };
+          {BO.field_type = BO.Int; BO.field_name = "v1"; BO.is_option = false; };
+        ];
+      } = List.nth ocaml_types 1);
+    () 
   in 
   print_endline "\n--- Good ---";
   ()
