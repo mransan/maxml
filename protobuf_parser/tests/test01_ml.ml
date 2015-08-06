@@ -8,34 +8,17 @@ let string_of_payload = function
     | Pc.Bits64 -> "Bits64"
     | Pc.Bytes  -> "Bytes"
  
-type ocaml_value = 
-  | Int of int 
-  | Float of float 
-  | String of string 
+let decode_bits32_as_int decoder = 
+  let b = Pc.Decoder.varint decoder in 
+  `Int (Pc.Decoder.int_of_int64 "" b)
 
-let as_string = function 
-  | String s -> s 
-  | _ -> failwith "not a string"
+let decode_string_as_string decoder = 
+  let b = Pc.Decoder.bytes decoder in 
+  `String (Bytes.to_string b) 
 
-let as_int = function 
-  | Int i -> i
-  | _ -> failwith "not a int"
-
-let as_float = function 
-  | Float f -> f
-  | _ -> failwith "not a float"
-
-let decode_int32_as_int decoder = function
-  | Pc.Varint -> 
-      Int (Pc.Decoder.int_of_int64 "" @@ Pc.Decoder.varint decoder)  
-  | _ -> failwith "decode error int32 -> int"
-
-let decode_string_as_string decoder = function
-  | Pc.Bytes -> 
-      let b = Pc.Decoder.bytes decoder in 
-      String (Bytes.to_string b) 
-  | _ -> failwith "decode error int32 -> int"
-
+let decode_bits32_as_float decoder = 
+  let b = Pc.Decoder.bits32 decoder in 
+  `Float (Int32.float_of_bits b) 
 
 let rec decode decoder mappings values = 
   match Pc.Decoder.key decoder with 
@@ -43,21 +26,9 @@ let rec decode decoder mappings values =
   | Some (number, payload_kind) -> (
     try 
       let mapping = List.assoc number mappings in 
-      decode decoder mappings ((number, mapping decoder payload_kind) :: values) 
+      decode decoder mappings ((number, mapping decoder) :: values) 
     with | Not_found -> values 
   )
-
-(** --------------- *) 
-
-type m = {
-  v1: int; 
-  v2: string; 
-}
-
-let m_mappings = [
-  (1, decode_int32_as_int);
-  (2, decode_string_as_string);  
-]
 
 let required number l = 
   List.assoc number l 
@@ -67,11 +38,54 @@ let optional number l =
     Some (List.assoc number l) 
   with | Not_found -> None 
 
-let m_decode l = {
-  v1 = as_int    @@ required 1 l; 
-  v2 = as_string @@ required 2 l;
+let sub_decoder d = 
+  Pc.Decoder.of_bytes @@ Pc.Decoder.bytes d 
+
+let decode_sub f d = 
+  Pc.Decoder.decode_exn f @@ Pc.Decoder.bytes d
+
+let e () = failwith "programmatic error"
+
+(** --------------- *) 
+
+type m = {
+  v1: int; 
+  v2: string; 
 }
-   
+
+let m_mappings = [
+  (1, decode_bits32_as_int);
+  (2, decode_string_as_string);  
+]
+
+let decode_m_from_l l = {
+  v1 = (match required 1 l with | `Int __v -> __v  | _ -> e ());
+  v2 = (match required 2 l with | `String __v -> __v | _ -> e ());
+}
+
+let decode_m decoder = 
+  decode decoder m_mappings [] 
+  |> decode_m_from_l 
+
+type n = {
+  n1 : float; 
+  n2 : m; 
+}
+
+let n_mappings = [
+  (1, decode_bits32_as_float);
+  (2, (fun d -> `M (decode_sub decode_m d)));
+]
+
+let decode_n_from_l l = {
+  n1 = (match required 1 l with | `Float __v -> __v | _ -> e());
+  n2 = (match required 2 l with | `M __v -> __v | _ -> e());
+}
+
+let decode_n d = 
+  decode d n_mappings []
+  |> decode_n_from_l 
+
 let () = 
 
   let ic = open_in_bin "test01.data" in 
@@ -88,7 +102,6 @@ let () =
   let buffer = Bytes.sub buffer 0 !size in 
 
   let decoder = Pc.Decoder.of_bytes buffer in 
-
-  let l = decode decoder m_mappings [] in 
-  let m = m_decode l in 
-  Printf.printf "m.v1 = %i, m.v2 = %s\n" m.v1 m.v2
+  let n = decode_n decoder in  
+  let m = n.n2 in 
+  Printf.printf "n.n1 = %f, m.v1 = %i, m.v2 = %s\n" n.n1 m.v1 m.v2

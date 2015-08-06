@@ -1,4 +1,6 @@
 
+module Pc = Protobuf_codec
+
 type field_type = 
   | String 
   | Float 
@@ -9,10 +11,20 @@ type field_type =
 
 type field_name = string 
 
+type regular_encoding = {
+  field_number:int; 
+  payload_kind: Pc.payload_kind;
+}
+
+type encoding_type = 
+  | Regular_field of regular_encoding
+  | One_of 
+
 type field = {
   field_type : field_type; 
   field_name : field_name; 
-  is_option  : bool
+  is_option  : bool;
+  encoding_type : encoding_type;
 }
 
 type record = {
@@ -81,37 +93,41 @@ let get_type_name_from_all_messages all_messages i =
 
 let process_field ?as_constructor ?is_option all_messages field = 
   let field_name = Astc_util.field_name field in 
-  let field_type = Astc_util.field_type field in 
+  let encoding_type = Astc_util.field_type field in 
 
   let field_name = match as_constructor with
     | Some _ -> constructor_name field_name 
     | None   -> record_field_name field_name 
   in 
 
-  let field_type = match field_type with
-    | Astc.Field_type_double  -> Float 
-    | Astc.Field_type_float  ->  Float 
-    | Astc.Field_type_int32  ->  Int
-    | Astc.Field_type_int64  ->  Int
-    | Astc.Field_type_uint32  -> Int
-    | Astc.Field_type_uint64 -> Int
-    | Astc.Field_type_sint32  -> Int
-    | Astc.Field_type_sint64  -> Int
-    | Astc.Field_type_fixed32  -> Int
-    | Astc.Field_type_fixed64  -> Int
-    | Astc.Field_type_sfixed32  -> Int
-    | Astc.Field_type_sfixed64 -> Int
-    | Astc.Field_type_bool  -> Bool 
-    | Astc.Field_type_string  -> String
-    | Astc.Field_type_bytes  -> Bytes
+  let field_type, payload_kind = match encoding_type with
+    | Astc.Field_type_double  -> Float, Pc.Bits64
+    | Astc.Field_type_float  ->  Float, Pc.Bits32 
+    | Astc.Field_type_int32  ->  Int, Pc.Varint
+    | Astc.Field_type_int64  ->  Int, Pc.Varint
+    | Astc.Field_type_uint32  -> Int, Pc.Varint 
+    | Astc.Field_type_uint64 -> Int, Pc.Varint
+    | Astc.Field_type_sint32  -> Int, Pc.Varint
+    | Astc.Field_type_sint64  -> Int, Pc.Varint
+    | Astc.Field_type_fixed32  -> Int, Pc.Bits32
+    | Astc.Field_type_fixed64  -> Int, Pc.Bits64
+    | Astc.Field_type_sfixed32  -> Int, Pc.Bits32
+    | Astc.Field_type_sfixed64 -> Int, Pc.Bits64
+    | Astc.Field_type_bool  -> Bool, Pc.Varint 
+    | Astc.Field_type_string  -> String, Pc.Bytes
+    | Astc.Field_type_bytes  -> Bytes, Pc.Bytes
     | Astc.Field_type_message i -> User_defined ( 
       get_type_name_from_all_messages all_messages i
-    )
+    ), Pc.Bytes
   in 
   {
     field_type; 
     field_name; 
-    is_option = match is_option with | Some _ -> true | None -> false;
+    is_option = (match is_option with | Some _ -> true | None -> false);
+    encoding_type = Regular_field {
+      field_number = Astc_util.field_number field;
+      payload_kind;
+    }; 
   }
 
 let compile_oneof all_messages message_scope {Astc.oneof_name ; Astc.oneof_fields } = 
@@ -153,6 +169,7 @@ let compile
         field_type =  User_defined (variant.variant_name); 
         field_name =  record_field_name f.Astc.oneof_name;
         is_option  = false;
+        encoding_type = One_of;
       } in 
       ((Variant variant)::variants, field::fields) 
     )
@@ -162,4 +179,3 @@ let compile
     record_name; 
     fields = List.rev fields;
   } :: variants )
-  (** TODO: TEST!!! *)

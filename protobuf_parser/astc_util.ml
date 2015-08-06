@@ -181,6 +181,14 @@ let compile_oneof_p1 ({
   Astc.oneof_name; 
   Astc.oneof_fields = List.map compile_field_p1 oneof_fields; 
 }
+  
+let not_found f : bool = 
+  try f () ; false 
+  with | Not_found -> true 
+
+let rec list_assoc2 x = function
+    [] -> raise Not_found
+  | (a,b)::l -> if compare b x = 0 then a else list_assoc2 x l
 
 let rec compile_message_p1 message_scope ({
   Ast.id;
@@ -201,39 +209,9 @@ let rec compile_message_p1 message_scope ({
         let all_sub = compile_message_p1 sub_scope m in 
         (body_content,  all_messages @ all_sub)
   ) ([], []) body_content in
-
-  let body_content = List.rev body_content in 
- 
-  all_sub @ [ {
-    Astc.id; 
-    Astc.message_scope;
-    Astc.message_name; 
-    Astc.body_content;
-  }] 
-
-let find_all_message_in_field_scope messages scope = 
-  List.filter (fun { Astc.message_scope;_ } -> 
-    let dec_scope = List.map (function 
-      | Astc.Namespace x -> x
-      | Astc.Message_name x -> x
-    ) message_scope in 
-    dec_scope = scope
-  ) messages 
-
-let rec list_assoc2 x = function
-    [] -> raise Not_found
-  | (a,b)::l -> if compare b x = 0 then a else list_assoc2 x l
   
-let not_found f : bool = 
-  try f () ; false 
-  with | Not_found -> true 
-
-let compile_message_p2 messages ({
-  Astc.message_name; 
-  Astc.message_scope;
-  Astc.body_content} as message)  = 
-
-
+  let body_content = List.rev body_content in 
+  
   (* Both field name and field number must be unique 
      within a message scope. This includes the field in a 
      oneof field inside the message. 
@@ -252,6 +230,33 @@ let compile_message_p2 messages ({
     else 
       duplicated_field_number name "" message_name
   in
+  ignore @@ List.fold_left (fun number_index -> function 
+    | Astc.Message_field f -> validate_duplicate number_index f
+    | Astc.Message_oneof_field {Astc.oneof_fields; _ } ->
+       List.fold_left validate_duplicate number_index oneof_fields
+  ) [] body_content ;  
+
+  all_sub @ [ {
+    Astc.id; 
+    Astc.message_scope;
+    Astc.message_name; 
+    Astc.body_content;
+  }] 
+
+let find_all_message_in_field_scope messages scope = 
+  List.filter (fun { Astc.message_scope;_ } -> 
+    let dec_scope = List.map (function 
+      | Astc.Namespace x -> x
+      | Astc.Message_name x -> x
+    ) message_scope in 
+    dec_scope = scope
+  ) messages 
+
+  
+let compile_message_p2 messages ({
+  Astc.message_name; 
+  Astc.message_scope;
+  Astc.body_content} as message)  = 
 
   (* stringify the message scope so that it can 
      be used with the field scope. 
@@ -310,26 +315,17 @@ let compile_message_p2 messages ({
     | field_type -> map_field_type field_type
   in
 
-  let _, body_content = List.fold_left (fun (number_index, body_content) -> function
+  let body_content = List.fold_left (fun body_content  -> function
     | Astc.Message_field field ->
       let field_type = process_field_type message_name field in 
-      (
-        validate_duplicate number_index field,
-        Astc.Message_field {field with Astc.field_type} :: body_content
-      ) 
+      Astc.Message_field {field with Astc.field_type} :: body_content
     | Astc.Message_oneof_field ({Astc.oneof_fields; _ } as oneof )  -> 
-      let number_index, oneof_fields = List.fold_left (fun (number_index, oneof_fields) field -> 
+      let oneof_fields = List.fold_left (fun oneof_fields field -> 
         let field_type = process_field_type message_name field in  
-        (
-          validate_duplicate number_index field,
-          {field with Astc.field_type }:: oneof_fields 
-        )
-      ) (number_index, []) oneof_fields in  
+        {field with Astc.field_type }:: oneof_fields 
+      ) [] oneof_fields in  
       let oneof_fields = List.rev oneof_fields in 
-      (
-        number_index,
-        Astc.Message_oneof_field {oneof with Astc.oneof_fields } :: body_content 
-      )
-  ) ([],[]) body_content in 
+      Astc.Message_oneof_field {oneof with Astc.oneof_fields } :: body_content 
+  ) [] body_content in 
   let body_content = List.rev body_content in 
   {message with Astc.body_content; }
