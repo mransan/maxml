@@ -580,23 +580,23 @@ let () =
     in 
     let ocaml_types = compile_to_ocaml s in 
     assert(1 = List.length ocaml_types); 
-    assert(BO.Record {
-      BO.record_name = "m"; 
-      BO.fields = [
-        {BO.field_type = BO.Int; BO.field_name = "v1"; BO.is_option = false;
-        encoding_type = BO.Regular_field {BO.field_number = 1; BO.payload_kind = Pc.Varint}};
-        {BO.field_type = BO.String; BO.field_name = "v2"; BO.is_option = false;
-        encoding_type = BO.Regular_field {BO.field_number = 2; payload_kind = Pc.Bytes}};
-        {BO.field_type = BO.Bool; BO.field_name = "v3"; BO.is_option = true; 
-        encoding_type = BO.Regular_field {BO.field_number = 3; payload_kind = Pc.Varint}};
-        {BO.field_type = BO.Float; BO.field_name = "v4"; BO.is_option = true;
-        encoding_type = BO.Regular_field {BO.field_number = 4; payload_kind = Pc.Bits32}};
-        {BO.field_type = BO.Float; BO.field_name = "v5"; BO.is_option = true;
-        encoding_type = BO.Regular_field {BO.field_number = 5; payload_kind = Pc.Bits64}};
-        {BO.field_type = BO.Bytes; BO.field_name = "v6"; BO.is_option = false;
-        encoding_type = BO.Regular_field {BO.field_number = 6; payload_kind = Pc.Bytes}};
+    assert(BO.(Record {
+      record_name = "m"; 
+      fields = [
+        {field_type = Int; field_name = "v1"; is_option = false;
+        encoding_type = Regular_field {field_number = 1; payload_kind = Pc.Varint}};
+        {field_type = String; field_name = "v2"; is_option = false;
+        encoding_type = Regular_field {field_number = 2; payload_kind = Pc.Bytes}};
+        {field_type = Bool; field_name = "v3"; is_option = true; 
+        encoding_type = Regular_field {field_number = 3; payload_kind = Pc.Varint}};
+        {field_type = Float; field_name = "v4"; is_option = true;
+        encoding_type = Regular_field {field_number = 4; payload_kind = Pc.Bits32}};
+        {field_type = Float; field_name = "v5"; is_option = true;
+        encoding_type = Regular_field {field_number = 5; payload_kind = Pc.Bits64}};
+        {field_type = Bytes; field_name = "v6"; is_option = false;
+        encoding_type = Regular_field {field_number = 6; payload_kind = Pc.Bytes}};
       ];
-    } = List.hd ocaml_types);
+    }) = List.hd ocaml_types);
     () 
   in 
   let () = 
@@ -613,23 +613,23 @@ let () =
     let ocaml_types = compile_to_ocaml s in 
     assert(2 = List.length ocaml_types); 
     assert(
-      BO.Record {
-        BO.record_name = "m1_m2"; 
-        BO.fields = [
-          {BO.field_type = BO.Int; BO.field_name = "m21"; BO.is_option = false;
-           encoding_type = BO.Regular_field {BO.field_number = 1; payload_kind = Pc.Varint}};
+      BO.(Record {
+        record_name = "m1_m2"; 
+        fields = [
+          {field_type = Int; field_name = "m21"; is_option = false;
+           encoding_type = Regular_field {field_number = 1; payload_kind = Pc.Varint}};
         ];
-      } = List.nth ocaml_types 0);
+      }) = List.nth ocaml_types 0);
     assert(
-      BO.Record {
-        BO.record_name = "m1"; 
-        BO.fields = [
-          {BO.field_type = BO.Int; BO.field_name = "m11"; BO.is_option = false;
-           encoding_type = BO.Regular_field {BO.field_number = 1; payload_kind = Pc.Varint}};
-          {BO.field_type = BO.User_defined "m1_m2"; BO.field_name = "sub"; BO.is_option = false;
-           encoding_type = BO.Regular_field {BO.field_number = 2; payload_kind = Pc.Bytes}};
+      BO.(Record {
+        record_name = "m1"; 
+        fields = [
+          {field_type = Int; field_name = "m11"; is_option = false;
+           encoding_type = Regular_field {field_number = 1; payload_kind = Pc.Varint}};
+          {field_type = User_defined "m1_m2"; field_name = "sub"; is_option = false;
+           encoding_type = Regular_field {field_number = 2; payload_kind = Pc.Bytes}};
         ];
-      } = List.nth ocaml_types 1);
+      }) = List.nth ocaml_types 1);
     () 
   in 
   let () = 
@@ -646,26 +646,62 @@ let () =
     let ocaml_types = compile_to_ocaml s in 
     assert(2 = List.length ocaml_types); 
     assert(
-      BO.Variant {
-        BO.variant_name  = "m1_o1"; 
-        BO.constructors = [
-          {BO.field_type = BO.Int; BO.field_name = "Intv"; BO.is_option = false;
-           encoding_type = BO.Regular_field {BO.field_number = 1; payload_kind = Pc.Varint}};
-          {BO.field_type = BO.String; BO.field_name = "Stringv"; BO.is_option = false;
-           encoding_type = BO.Regular_field {BO.field_number = 2; payload_kind = Pc.Bytes}};
+      BO.(Variant {
+        variant_name  = "m1_o1"; 
+        constructors = [
+          {field_type = Int; field_name = "Intv"; is_option = false;
+           encoding_type = Regular_field {field_number = 1; payload_kind = Pc.Varint}};
+          {field_type = String; field_name = "Stringv"; is_option = false;
+           encoding_type = Regular_field {field_number = 2; payload_kind = Pc.Bytes}};
         ];
-      } = List.nth ocaml_types 0);
+      }) = List.nth ocaml_types 0);
     assert(
-      BO.Record {
-        BO.record_name = "m1"; 
-        BO.fields = [
-          {BO.field_type = BO.User_defined "m1_o1"; BO.field_name = "o1"; BO.is_option = false;
-          encoding_type = BO.One_of };
-          {BO.field_type = BO.Int; BO.field_name = "v1"; BO.is_option = false;
-           encoding_type = BO.Regular_field {BO.field_number = 3; payload_kind = Pc.Varint}};
+      BO.(Record {
+        record_name = "m1"; 
+        fields = [
+          {field_type = User_defined "m1_o1"; field_name = "o1"; is_option = false;
+          encoding_type = One_of };
+          {field_type = Int; field_name = "v1"; is_option = false;
+           encoding_type = Regular_field {field_number = 3; payload_kind = Pc.Varint}};
         ];
-      } = List.nth ocaml_types 1);
+      }) = List.nth ocaml_types 1);
     () 
+  in 
+  let () =
+    let r = BO.({
+      record_name = "test";
+      fields = [ {
+        field_type = Int; 
+        field_name = "v1"; 
+        is_option = false;
+        encoding_type = Regular_field {field_number = 1; payload_kind = Pc.Varint}
+      }; {
+        field_type = String; 
+        field_name = "v2"; 
+        is_option = true;
+        encoding_type = Regular_field {field_number = 2; payload_kind = Pc.Bytes}
+      };{
+        field_type = User_defined "other"; 
+        field_name = "v3"; 
+        is_option = false;
+        encoding_type = Regular_field {field_number = 3; payload_kind = Pc.Bytes}
+      };];
+    }) in 
+
+    let s = {|type test = {
+  v1 : int;
+  v2 : string option;
+  v3 : other;
+}|} in 
+
+    assert(s = BO.Print.gen_record r);
+    let s = {|let test_mappings = [
+  (1, decode_varint_as_int);
+  (2, decode_bytes_as_string);
+  (3, (fun d -> `Other (decode_sub decode_other d)));
+]|} in
+    assert (s = BO.Print.gen_mappings r);
+    ()
   in 
   print_endline "\n--- Good ---";
   ()

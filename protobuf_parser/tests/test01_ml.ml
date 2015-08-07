@@ -53,38 +53,35 @@ type m = {
   v2: string; 
 }
 
-let m_mappings = [
-  (1, decode_bits32_as_int);
-  (2, decode_string_as_string);  
-]
-
-let decode_m_from_l l = {
-  v1 = (match required 1 l with | `Int __v -> __v  | _ -> e ());
-  v2 = (match required 2 l with | `String __v -> __v | _ -> e ());
-}
-
-let decode_m decoder = 
-  decode decoder m_mappings [] 
-  |> decode_m_from_l 
+let decode_m =  
+  let m_mappings = [
+    (1, decode_bits32_as_int);
+    (2, decode_string_as_string);  
+  ] in 
+  (fun d -> 
+    let l = decode d m_mappings  [] in  {
+      v1 = (match required 1 l with | `Int __v -> __v  | _ -> e ());
+      v2 = (match required 2 l with | `String __v -> __v | _ -> e ());
+    } 
+  )
 
 type n = {
   n1 : float; 
   n2 : m; 
 }
 
-let n_mappings = [
-  (1, decode_bits32_as_float);
-  (2, (fun d -> `M (decode_sub decode_m d)));
-]
-
-let decode_n_from_l l = {
-  n1 = (match required 1 l with | `Float __v -> __v | _ -> e());
-  n2 = (match required 2 l with | `M __v -> __v | _ -> e());
-}
-
-let decode_n d = 
-  decode d n_mappings []
-  |> decode_n_from_l 
+let decode_n =
+  let n_mappings = [
+    (1, decode_bits32_as_float);
+    (2, (fun d -> `M (decode_sub decode_m d)));
+  ]
+  in 
+  (fun d ->  
+    let l = decode d n_mappings [] in {
+      n1 = (match required 1 l with | `Float __v -> __v | _ -> e());
+      n2 = (match required 2 l with | `M __v -> __v | _ -> e());
+    }
+  )
 
 let () = 
 

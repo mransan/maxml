@@ -1,6 +1,12 @@
 
 module Pc = Protobuf_codec
 
+let string_of_payload_kind = function 
+  | Pc.Varint -> "varint"
+  | Pc.Bits32 -> "bits32"
+  | Pc.Bits64 -> "bits64"
+  | Pc.Bytes  -> "bytes"
+
 type field_type = 
   | String 
   | Float 
@@ -9,15 +15,25 @@ type field_type =
   | Bool
   | User_defined of string 
 
+let string_of_field_type is_option field_type = 
+  let s = match field_type with 
+    | String -> "string"
+    | Float  -> "float"
+    | Int    -> "int"
+    | Bytes  -> "bytes"
+    | Bool   -> "bool"
+    | User_defined t -> t in 
+  if is_option
+  then s ^ " option"
+  else s  
+
 type field_name = string 
 
-type regular_encoding = {
-  field_number:int; 
-  payload_kind: Pc.payload_kind;
-}
-
 type encoding_type = 
-  | Regular_field of regular_encoding
+  | Regular_field of {
+    field_number:int ; 
+    payload_kind:Pc.payload_kind; 
+  }
   | One_of 
 
 type field = {
@@ -175,7 +191,45 @@ let compile
     )
   ) ([], []) body_content in 
 
-  List.rev ( Record {
+  List.rev (Record {
     record_name; 
     fields = List.rev fields;
-  } :: variants )
+  } :: variants)
+
+module Print = struct 
+  module P = Printf
+
+  let gen_record {record_name; fields } = 
+    let s = P.sprintf "type %s = {" record_name in 
+    let s = List.fold_left (fun s {field_name; field_type; is_option; _ } -> 
+      let type_name = string_of_field_type is_option field_type in 
+      s ^ P.sprintf "\n  %s : %s;" field_name type_name
+    ) s fields in 
+    s ^ "\n}"
+  
+  (*
+  let n_mappings = [
+    (1, decode_bits32_as_float);
+    (2, (fun d -> `M (decode_sub decode_m d)));
+  ]
+  *)
+  
+  let gen_mappings {record_name; fields} =
+    let s = P.sprintf "let %s_mappings = [" record_name in 
+    let s = List.fold_left (fun s {encoding_type;field_type;_ } -> 
+      match encoding_type with 
+      | Regular_field {field_number; payload_kind } -> (
+        let decoding = match field_type with 
+          | User_defined t -> 
+             P.sprintf "(fun d -> `%s (decode_sub decode_%s d))" (constructor_name t) t  
+          | _ -> 
+             P.sprintf "decode_%s_as_%s" 
+               (string_of_payload_kind payload_kind)
+               (string_of_field_type false field_type) 
+        in 
+        s ^ P.sprintf "\n  (%i, %s);" field_number decoding 
+      )
+      | One_of -> failwith "One_of not supported"
+    ) s fields in 
+    s ^ "\n]"
+end 
