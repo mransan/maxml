@@ -7,7 +7,7 @@
 
 int main() {
 
-    M m; 
+    N_M m; 
     m.set_v1(123);
     m.set_v2("I am a test string");
 

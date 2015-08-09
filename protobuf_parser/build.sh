@@ -6,6 +6,19 @@ rm -rf parser.mli
 rm -rf parser.ml
 rm lexer.ml
 PBC_INC=../../install/build/lib/ocaml/site-lib/ocaml-protobuf/
+OCAML_INC=../../install/build/lib/ocaml/site-lib/ocaml-protobuf/
+
+CMXS="
+str.cmxa 
+ast.cmx 
+ast_util.cmx 
+astc.cmx 
+astc_util.cmx 
+parser.cmx 
+lexer.cmx 
+protobuf_codec.cmxa 
+backend_ocaml.cmx
+"
 
 $OCAMLYACC parser.mly
 $OCAMLLEX  lexer.mll
@@ -20,5 +33,6 @@ $OCAMLOPT -c lexer.ml
 $OCAMLOPT -c parser.ml
 $OCAMLOPT -I $PBC_INC -c backend_ocaml.ml 
 $OCAMLOPT -I $PBC_INC -c main.ml 
-$OCAMLOPT -I $PBC_INC -o protobuf_parser.tsk \
-    ast.cmx ast_util.cmx astc.cmx astc_util.cmx parser.cmx lexer.cmx protobuf_codec.cmxa backend_ocaml.cmx main.cmx
+$OCAMLOPT -I $PBC_INC -c test.ml 
+$OCAMLOPT -I $PBC_INC -o test.tsk $CMXS test.cmx
+$OCAMLOPT -I $PBC_INC -o ml-protoc $CMXS main.cmx

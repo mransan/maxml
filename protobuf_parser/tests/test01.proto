@@ -1,11 +1,11 @@
 
 
-message M {
-    required int32  v1 = 1; 
-    required string v2 = 2; 
-}
 
 message N {
+    message M {
+        required int32  v1 = 1; 
+        required string v2 = 2; 
+    }
     required float n1 = 1;
     required M n2 = 2;
 }

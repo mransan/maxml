@@ -31,19 +31,19 @@ void  protobuf_AddDesc_test01_2eproto();
 void protobuf_AssignDesc_test01_2eproto();
 void protobuf_ShutdownFile_test01_2eproto();
 
-class M;
 class N;
+class N_M;
 
 // ===================================================================
 
-class M : public ::google::protobuf::Message {
+class N_M : public ::google::protobuf::Message {
  public:
-  M();
-  virtual ~M();
+  N_M();
+  virtual ~N_M();
 
-  M(const M& from);
+  N_M(const N_M& from);
 
-  inline M& operator=(const M& from) {
+  inline N_M& operator=(const N_M& from) {
     CopyFrom(from);
     return *this;
   }
@@ -57,17 +57,17 @@ class M : public ::google::protobuf::Message {
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const M& default_instance();
+  static const N_M& default_instance();
 
-  void Swap(M* other);
+  void Swap(N_M* other);
 
   // implements Message ----------------------------------------------
 
-  M* New() const;
+  N_M* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const M& from);
-  void MergeFrom(const M& from);
+  void CopyFrom(const N_M& from);
+  void MergeFrom(const N_M& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -108,7 +108,7 @@ class M : public ::google::protobuf::Message {
   inline ::std::string* release_v2();
   inline void set_allocated_v2(::std::string* v2);
 
-  // @@protoc_insertion_point(class_scope:M)
+  // @@protoc_insertion_point(class_scope:N.M)
  private:
   inline void set_has_v1();
   inline void clear_has_v1();
@@ -126,7 +126,7 @@ class M : public ::google::protobuf::Message {
   friend void protobuf_ShutdownFile_test01_2eproto();
 
   void InitAsDefaultInstance();
-  static M* default_instance_;
+  static N_M* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -181,6 +181,8 @@ class N : public ::google::protobuf::Message {
 
   // nested types ----------------------------------------------------
 
+  typedef N_M M;
+
   // accessors -------------------------------------------------------
 
   // required float n1 = 1;
@@ -190,14 +192,14 @@ class N : public ::google::protobuf::Message {
   inline float n1() const;
   inline void set_n1(float value);
 
-  // required .M n2 = 2;
+  // required .N.M n2 = 2;
   inline bool has_n2() const;
   inline void clear_n2();
   static const int kN2FieldNumber = 2;
-  inline const ::M& n2() const;
-  inline ::M* mutable_n2();
-  inline ::M* release_n2();
-  inline void set_allocated_n2(::M* n2);
+  inline const ::N_M& n2() const;
+  inline ::N_M* mutable_n2();
+  inline ::N_M* release_n2();
+  inline void set_allocated_n2(::N_M* n2);
 
   // @@protoc_insertion_point(class_scope:N)
  private:
@@ -210,7 +212,7 @@ class N : public ::google::protobuf::Message {
 
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
-  ::M* n2_;
+  ::N_M* n2_;
   float n1_;
   friend void  protobuf_AddDesc_test01_2eproto();
   friend void protobuf_AssignDesc_test01_2eproto();
@@ -224,85 +226,85 @@ class N : public ::google::protobuf::Message {
 
 // ===================================================================
 
-// M
+// N_M
 
 // required int32 v1 = 1;
-inline bool M::has_v1() const {
+inline bool N_M::has_v1() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void M::set_has_v1() {
+inline void N_M::set_has_v1() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void M::clear_has_v1() {
+inline void N_M::clear_has_v1() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void M::clear_v1() {
+inline void N_M::clear_v1() {
   v1_ = 0;
   clear_has_v1();
 }
-inline ::google::protobuf::int32 M::v1() const {
-  // @@protoc_insertion_point(field_get:M.v1)
+inline ::google::protobuf::int32 N_M::v1() const {
+  // @@protoc_insertion_point(field_get:N.M.v1)
   return v1_;
 }
-inline void M::set_v1(::google::protobuf::int32 value) {
+inline void N_M::set_v1(::google::protobuf::int32 value) {
   set_has_v1();
   v1_ = value;
-  // @@protoc_insertion_point(field_set:M.v1)
+  // @@protoc_insertion_point(field_set:N.M.v1)
 }
 
 // required string v2 = 2;
-inline bool M::has_v2() const {
+inline bool N_M::has_v2() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void M::set_has_v2() {
+inline void N_M::set_has_v2() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void M::clear_has_v2() {
+inline void N_M::clear_has_v2() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void M::clear_v2() {
+inline void N_M::clear_v2() {
   if (v2_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     v2_->clear();
   }
   clear_has_v2();
 }
-inline const ::std::string& M::v2() const {
-  // @@protoc_insertion_point(field_get:M.v2)
+inline const ::std::string& N_M::v2() const {
+  // @@protoc_insertion_point(field_get:N.M.v2)
   return *v2_;
 }
-inline void M::set_v2(const ::std::string& value) {
+inline void N_M::set_v2(const ::std::string& value) {
   set_has_v2();
   if (v2_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     v2_ = new ::std::string;
   }
   v2_->assign(value);
-  // @@protoc_insertion_point(field_set:M.v2)
+  // @@protoc_insertion_point(field_set:N.M.v2)
 }
-inline void M::set_v2(const char* value) {
+inline void N_M::set_v2(const char* value) {
   set_has_v2();
   if (v2_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     v2_ = new ::std::string;
   }
   v2_->assign(value);
-  // @@protoc_insertion_point(field_set_char:M.v2)
+  // @@protoc_insertion_point(field_set_char:N.M.v2)
 }
-inline void M::set_v2(const char* value, size_t size) {
+inline void N_M::set_v2(const char* value, size_t size) {
   set_has_v2();
   if (v2_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     v2_ = new ::std::string;
   }
   v2_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:M.v2)
+  // @@protoc_insertion_point(field_set_pointer:N.M.v2)
 }
-inline ::std::string* M::mutable_v2() {
+inline ::std::string* N_M::mutable_v2() {
   set_has_v2();
   if (v2_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     v2_ = new ::std::string;
   }
-  // @@protoc_insertion_point(field_mutable:M.v2)
+  // @@protoc_insertion_point(field_mutable:N.M.v2)
   return v2_;
 }
-inline ::std::string* M::release_v2() {
+inline ::std::string* N_M::release_v2() {
   clear_has_v2();
   if (v2_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     return NULL;
@@ -312,7 +314,7 @@ inline ::std::string* M::release_v2() {
     return temp;
   }
 }
-inline void M::set_allocated_v2(::std::string* v2) {
+inline void N_M::set_allocated_v2(::std::string* v2) {
   if (v2_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     delete v2_;
   }
@@ -323,7 +325,7 @@ inline void M::set_allocated_v2(::std::string* v2) {
     clear_has_v2();
     v2_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_set_allocated:M.v2)
+  // @@protoc_insertion_point(field_set_allocated:N.M.v2)
 }
 
 // -------------------------------------------------------------------
@@ -354,7 +356,7 @@ inline void N::set_n1(float value) {
   // @@protoc_insertion_point(field_set:N.n1)
 }
 
-// required .M n2 = 2;
+// required .N.M n2 = 2;
 inline bool N::has_n2() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
@@ -365,26 +367,26 @@ inline void N::clear_has_n2() {
   _has_bits_[0] &= ~0x00000002u;
 }
 inline void N::clear_n2() {
-  if (n2_ != NULL) n2_->::M::Clear();
+  if (n2_ != NULL) n2_->::N_M::Clear();
   clear_has_n2();
 }
-inline const ::M& N::n2() const {
+inline const ::N_M& N::n2() const {
   // @@protoc_insertion_point(field_get:N.n2)
   return n2_ != NULL ? *n2_ : *default_instance_->n2_;
 }
-inline ::M* N::mutable_n2() {
+inline ::N_M* N::mutable_n2() {
   set_has_n2();
-  if (n2_ == NULL) n2_ = new ::M;
+  if (n2_ == NULL) n2_ = new ::N_M;
   // @@protoc_insertion_point(field_mutable:N.n2)
   return n2_;
 }
-inline ::M* N::release_n2() {
+inline ::N_M* N::release_n2() {
   clear_has_n2();
-  ::M* temp = n2_;
+  ::N_M* temp = n2_;
   n2_ = NULL;
   return temp;
 }
-inline void N::set_allocated_n2(::M* n2) {
+inline void N::set_allocated_n2(::N_M* n2) {
   delete n2_;
   n2_ = n2;
   if (n2) {
