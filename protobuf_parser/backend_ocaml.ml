@@ -261,6 +261,11 @@ module Print = struct
     ) s fields in 
     s ^ "\n]"
 
+  let gen_decode_sig {record_name; _ } = 
+    P.sprintf "val decode_%s : Protobuf_codec.Decoder.t -> %s" 
+      record_name
+      record_name 
+
   let gen_decode ({record_name; fields } as field) = 
     let s = P.sprintf "let decode_%s =" record_name in
     let s = s ^ P.sprintf "  \n%s" (add_indentation 1 @@ gen_mappings field) in 

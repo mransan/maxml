@@ -16,14 +16,17 @@ let parse_args () =
   let usage = "protobufo.tsk -out <file_name> <file_name>.proto" in  
   Arg.parse cmd_line_args anon_fun usage;
   assert(!proto_file_name <> ""); 
-  let oc = match !out_file_name with 
+  let struct_oc = match !out_file_name with 
     | "" -> stdout 
-    | _  -> open_out !out_file_name in 
-  (open_in !proto_file_name, oc)  
+    | _  -> open_out (!out_file_name ^ ".ml") in 
+  let sig_oc = match !out_file_name with 
+    | "" -> stdout 
+    | _  -> open_out (!out_file_name ^ ".mli") in 
+  (open_in !proto_file_name, sig_oc, struct_oc)  
 
 let () = 
 
-  let ic, oc = parse_args () in 
+  let ic, sig_oc, struct_oc = parse_args () in 
   let ast_msg = 
     Parser.message_ Lexer.lexer (Lexing.from_channel ic)
   in 
@@ -45,7 +48,17 @@ let () =
       s ^ 
       BO.Print.gen_variant_type v ^ "\n\n"
   ) s otypes in 
-  output_string oc s 
+  output_string struct_oc s;  
+  let s = List.fold_left (fun s -> function 
+    | BO.Record r -> 
+      s ^ 
+      BO.Print.gen_record_type r ^ "\n\n" ^ 
+      BO.Print.gen_decode_sig  r ^ "\n\n" 
+    | BO.Variant v -> 
+      s ^ 
+      BO.Print.gen_variant_type v ^ "\n\n"
+  ) "" otypes in
+  output_string sig_oc s  
   
    
 

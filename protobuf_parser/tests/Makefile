@@ -14,11 +14,11 @@ test01.pb.cc: test01.proto
 test01.tsk: main01.cpp test01.pb.cc 
 	g++ -I ./  -I $(PB_HINC) $? -L $(PB_LINC) -l protobuf -o $@
 
-test01_types.ml: test01.proto
-	../ml-protoc -out ./test01_types.ml test01.proto
+test01_types.ml test01_types.mli : test01.proto
+	../ml-protoc -out ./test01_types test01.proto
 
 
-test01_ml.tsk: test01_types.ml test01_ml.ml 
+test01_ml.tsk: test01_types.mli test01_types.ml test01_ml.ml 
 	$(OCAMLOPT) -I $(PBC_INC) protobuf_codec.cmxa $? -o $@ 
 
 .PHONY: all clean test_01 
@@ -29,7 +29,7 @@ test01: test01.tsk test01_ml.tsk
 
 clean:
 	rm -f test01.pb*
-	rm -f test01_types.ml 
+	rm -f test01_types.*
 	rm -f *.tsk
 	rm -f *.o
 
