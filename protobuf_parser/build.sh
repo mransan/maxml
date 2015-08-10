@@ -17,6 +17,7 @@ astc_util.cmx
 parser.cmx 
 lexer.cmx 
 protobuf_codec.cmxa 
+backend_ocaml_static.cmx
 backend_ocaml.cmx
 "
 
@@ -31,6 +32,7 @@ $OCAMLOPT -c astc_util.ml
 $OCAMLOPT -c parser.mli
 $OCAMLOPT -c lexer.ml
 $OCAMLOPT -c parser.ml
+$OCAMLOPT -I $PBC_INC -c backend_ocaml_static.ml 
 $OCAMLOPT -I $PBC_INC -c backend_ocaml.ml 
 $OCAMLOPT -I $PBC_INC -c main.ml 
 $OCAMLOPT -I $PBC_INC -c test.ml 

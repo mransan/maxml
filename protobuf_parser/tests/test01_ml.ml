@@ -18,6 +18,13 @@ let () =
   let buffer = Bytes.sub buffer 0 !size in 
 
   let decoder = Pc.Decoder.of_bytes buffer in 
+  let string_of_n_o = function
+    | Types.O1 i -> Printf.sprintf "O1(int:%i)" i
+    | Types.O2 s -> Printf.sprintf "02(str:%s)" s
+  in  
   let n = Types.decode_n decoder in  
   let m = n.Types.n2 in 
-  Printf.printf "n.n1 = %f, m.v1 = %i, m.v2 = %s\n" n.Types.n1 m.Types.v1 m.Types.v2
+  Printf.printf "n.o  = %s \n" (string_of_n_o n.Types.o); 
+  Printf.printf "n.n1 = %f \n" n.Types.n1; 
+  Printf.printf "m.v1 = %i \n" m.Types.v1; 
+  Printf.printf "m.v2 = %s \n" m.Types.v2; 

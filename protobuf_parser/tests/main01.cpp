@@ -1,5 +1,3 @@
-
-
 #include <test01.pb.h>
 
 #include <iostream>
@@ -14,6 +12,8 @@ int main() {
     N n; 
     n.set_n1(1.2);
     *(n.mutable_n2()) = m;
+    n.set_o1(123);
+    n.set_o2("i am o2");
 
     std::ofstream out("test01.data");
     n.SerializeToOstream(&out);

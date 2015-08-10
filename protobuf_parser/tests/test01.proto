@@ -6,6 +6,10 @@ message N {
         required int32  v1 = 1; 
         required string v2 = 2; 
     }
+    oneof O {
+        int32  o1 = 3; 
+        string o2 = 4; 
+    }
     required float n1 = 1;
     required M n2 = 2;
 }

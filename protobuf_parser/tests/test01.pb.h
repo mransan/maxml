@@ -153,6 +153,12 @@ class N : public ::google::protobuf::Message {
   static const ::google::protobuf::Descriptor* descriptor();
   static const N& default_instance();
 
+  enum OCase {
+    kO1 = 3,
+    kO2 = 4,
+    O_NOT_SET = 0,
+  };
+
   void Swap(N* other);
 
   // implements Message ----------------------------------------------
@@ -185,6 +191,25 @@ class N : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
+  // optional int32 o1 = 3;
+  inline bool has_o1() const;
+  inline void clear_o1();
+  static const int kO1FieldNumber = 3;
+  inline ::google::protobuf::int32 o1() const;
+  inline void set_o1(::google::protobuf::int32 value);
+
+  // optional string o2 = 4;
+  inline bool has_o2() const;
+  inline void clear_o2();
+  static const int kO2FieldNumber = 4;
+  inline const ::std::string& o2() const;
+  inline void set_o2(const ::std::string& value);
+  inline void set_o2(const char* value);
+  inline void set_o2(const char* value, size_t size);
+  inline ::std::string* mutable_o2();
+  inline ::std::string* release_o2();
+  inline void set_allocated_o2(::std::string* o2);
+
   // required float n1 = 1;
   inline bool has_n1() const;
   inline void clear_n1();
@@ -201,12 +226,19 @@ class N : public ::google::protobuf::Message {
   inline ::N_M* release_n2();
   inline void set_allocated_n2(::N_M* n2);
 
+  inline OCase O_case() const;
   // @@protoc_insertion_point(class_scope:N)
  private:
+  inline void set_has_o1();
+  inline void set_has_o2();
   inline void set_has_n1();
   inline void clear_has_n1();
   inline void set_has_n2();
   inline void clear_has_n2();
+
+  inline bool has_O();
+  void clear_O();
+  inline void clear_has_O();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -214,6 +246,12 @@ class N : public ::google::protobuf::Message {
   mutable int _cached_size_;
   ::N_M* n2_;
   float n1_;
+  union OUnion {
+    ::google::protobuf::int32 o1_;
+    ::std::string* o2_;
+  } O_;
+  ::google::protobuf::uint32 _oneof_case_[1];
+
   friend void  protobuf_AddDesc_test01_2eproto();
   friend void protobuf_AssignDesc_test01_2eproto();
   friend void protobuf_ShutdownFile_test01_2eproto();
@@ -332,15 +370,112 @@ inline void N_M::set_allocated_v2(::std::string* v2) {
 
 // N
 
+// optional int32 o1 = 3;
+inline bool N::has_o1() const {
+  return O_case() == kO1;
+}
+inline void N::set_has_o1() {
+  _oneof_case_[0] = kO1;
+}
+inline void N::clear_o1() {
+  if (has_o1()) {
+    O_.o1_ = 0;
+    clear_has_O();
+  }
+}
+inline ::google::protobuf::int32 N::o1() const {
+  if (has_o1()) {
+    return O_.o1_;
+  }
+  return 0;
+}
+inline void N::set_o1(::google::protobuf::int32 value) {
+  if (!has_o1()) {
+    clear_O();
+    set_has_o1();
+  }
+  O_.o1_ = value;
+}
+
+// optional string o2 = 4;
+inline bool N::has_o2() const {
+  return O_case() == kO2;
+}
+inline void N::set_has_o2() {
+  _oneof_case_[0] = kO2;
+}
+inline void N::clear_o2() {
+  if (has_o2()) {
+    delete O_.o2_;
+    clear_has_O();
+  }
+}
+inline const ::std::string& N::o2() const {
+  if (has_o2()) {
+    return *O_.o2_;
+  }
+  return ::google::protobuf::internal::GetEmptyStringAlreadyInited();
+}
+inline void N::set_o2(const ::std::string& value) {
+  if (!has_o2()) {
+    clear_O();
+    set_has_o2();
+    O_.o2_ = new ::std::string;
+  }
+  O_.o2_->assign(value);
+}
+inline void N::set_o2(const char* value) {
+  if (!has_o2()) {
+    clear_O();
+    set_has_o2();
+    O_.o2_ = new ::std::string;
+  }
+  O_.o2_->assign(value);
+}
+inline void N::set_o2(const char* value, size_t size) {
+  if (!has_o2()) {
+    clear_O();
+    set_has_o2();
+    O_.o2_ = new ::std::string;
+  }
+  O_.o2_->assign(
+      reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* N::mutable_o2() {
+  if (!has_o2()) {
+    clear_O();
+    set_has_o2();
+    O_.o2_ = new ::std::string;
+  }
+  return O_.o2_;
+}
+inline ::std::string* N::release_o2() {
+  if (has_o2()) {
+    clear_has_O();
+    ::std::string* temp = O_.o2_;
+    O_.o2_ = NULL;
+    return temp;
+  } else {
+    return NULL;
+  }
+}
+inline void N::set_allocated_o2(::std::string* o2) {
+  clear_O();
+  if (o2) {
+    set_has_o2();
+    O_.o2_ = o2;
+  }
+}
+
 // required float n1 = 1;
 inline bool N::has_n1() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
+  return (_has_bits_[0] & 0x00000004u) != 0;
 }
 inline void N::set_has_n1() {
-  _has_bits_[0] |= 0x00000001u;
+  _has_bits_[0] |= 0x00000004u;
 }
 inline void N::clear_has_n1() {
-  _has_bits_[0] &= ~0x00000001u;
+  _has_bits_[0] &= ~0x00000004u;
 }
 inline void N::clear_n1() {
   n1_ = 0;
@@ -358,13 +493,13 @@ inline void N::set_n1(float value) {
 
 // required .N.M n2 = 2;
 inline bool N::has_n2() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
+  return (_has_bits_[0] & 0x00000008u) != 0;
 }
 inline void N::set_has_n2() {
-  _has_bits_[0] |= 0x00000002u;
+  _has_bits_[0] |= 0x00000008u;
 }
 inline void N::clear_has_n2() {
-  _has_bits_[0] &= ~0x00000002u;
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void N::clear_n2() {
   if (n2_ != NULL) n2_->::N_M::Clear();
@@ -397,6 +532,15 @@ inline void N::set_allocated_n2(::N_M* n2) {
   // @@protoc_insertion_point(field_set_allocated:N.n2)
 }
 
+inline bool N::has_O() {
+  return O_case() != O_NOT_SET;
+}
+inline void N::clear_has_O() {
+  _oneof_case_[0] = O_NOT_SET;
+}
+inline N::OCase N::O_case() const {
+  return N::OCase(_oneof_case_[0]);
+}
 
 // @@protoc_insertion_point(namespace_scope)
 

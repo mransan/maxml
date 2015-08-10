@@ -34,21 +34,21 @@ type encoding_type =
     field_number:int ; 
     payload_kind:Pc.payload_kind; 
   }
-  | One_of 
+  | One_of of variant  
 
-type field = {
+and field = {
   field_type : field_type; 
   field_name : field_name; 
   is_option  : bool;
   encoding_type : encoding_type;
 }
 
-type record = {
+and record = {
   record_name: string; 
   fields : field list; 
 }
 
-type variant = {
+and variant = {
   variant_name : string; 
   constructors : field list;
 }
@@ -189,7 +189,7 @@ let compile
         field_type =  User_defined (variant.variant_name); 
         field_name =  record_field_name f.Astc.oneof_name;
         is_option  = false;
-        encoding_type = One_of;
+        encoding_type = One_of variant; 
       } in 
       ((Variant variant)::variants, field::fields) 
     )
@@ -214,59 +214,12 @@ module Print = struct
     ) s fields in 
     s ^ "\n}"
   
-  let prefix_payload_to_ocaml_t  = {|
-
-module Pc = Protobuf_codec 
-
-let decode_varint_as_int decoder = 
-  Pc.Decoder.int_of_int64 "" @@ Pc.Decoder.varint decoder 
-
-let decode_bits32_as_int decoder = 
-  Pc.Decoder.int_of_int32 "" @@ Pc.Decoder.bits32 decoder 
-
-let decode_bits64_as_int decoder = 
-  Pc.Decoder.int_of_int64 "" @@ Pc.Decoder.bits64 decoder 
-
-let decode_varint_as_bool decoder = 
-  Pc.Decoder.bool_of_int64 "" @@ Pc.Decoder.varint decoder
-
-let decode_bits32_as_float decoder = 
-  Int32.float_of_bits @@ Pc.Decoder.bits32 decoder 
-  
-let decode_bits64_as_float decoder = 
-  Int64.float_of_bits @@ Pc.Decoder.bits64 decoder 
-
-let decode_bytes_as_string decoder = 
-  Bytes.to_string @@ Pc.Decoder.bytes decoder 
-
-let decode_bytes_as_bytes  = Pc.Decoder.bytes 
-
-|}
-
-  let prefix_decode_f = {|
-let rec decode decoder mappings values = 
-  match Pc.Decoder.key decoder with 
-  | None -> values 
-  | Some (number, payload_kind) -> (
-    try 
-      let mapping = List.assoc number mappings in 
-      decode decoder mappings ((number, mapping decoder) :: values) 
-    with | Not_found -> values 
-  )
-
-let required number l = 
-  List.assoc number l 
-
-let optional number l = 
-  try 
-    Some (List.assoc number l) 
-  with | Not_found -> None 
-
-let decode_sub f d = 
-  Pc.Decoder.decode_exn f @@ Pc.Decoder.bytes d
-
-let e () = failwith "programmatic error"
-|}
+  let gen_variant_type {variant_name; constructors } = 
+    let s = P.sprintf "type %s =" variant_name in 
+    List.fold_left (fun s {field_name; field_type; is_option; _ } -> 
+      let type_name = string_of_field_type is_option field_type in 
+      s ^ P.sprintf "\n  | %s of %s" field_name type_name
+    ) s constructors
 
   let gen_mappings {record_name; fields} =
     let s = P.sprintf "let %s_mappings = [" record_name in 
@@ -285,7 +238,26 @@ let e () = failwith "programmatic error"
         in 
         s ^ P.sprintf "\n  (%i, %s);" field_number decoding 
       )
-      | One_of -> failwith "One_of not supported"
+      | One_of {variant_name ; constructors; } -> (
+        List.fold_left (fun s {encoding_type; field_type; field_name } -> 
+          match encoding_type with
+          | Regular_field {field_number; payload_kind } -> (
+            let decoding  =  match field_type with 
+            | User_defined t -> 
+               P.sprintf "(fun d -> `%s (%s (decode_sub decode_%s d)))" (constructor_name variant_name) field_name t  
+            | _ -> 
+               let field_type = string_of_field_type false field_type in 
+               P.sprintf "(fun d -> `%s (%s (decode_%s_as_%s d)))" 
+                 (constructor_name variant_name)
+                 field_name
+                 (string_of_payload_kind payload_kind)
+                 field_type 
+            in 
+            s ^ P.sprintf "\n  (%i, %s);" field_number decoding 
+          )
+          | One_of _ -> failwith "Programatic error"
+        ) s constructors
+      )
     ) s fields in 
     s ^ "\n]"
 
@@ -294,16 +266,24 @@ let e () = failwith "programmatic error"
     let s = s ^ P.sprintf "  \n%s" (add_indentation 1 @@ gen_mappings field) in 
     let s = s ^ "\n  in" in 
     let s = s ^ "\n  (fun d ->" in 
-    let s = s ^ P.sprintf "    let l = decode d %s_mappings []  in  {" record_name in 
-    let s = s ^ add_indentation 2 @@ List.fold_left (fun s {encoding_type; field_type; field_name} ->  
+    let s = s ^ P.sprintf "\n    let l = decode d %s_mappings []  in  {" record_name in 
+    let s = s ^ add_indentation 3 @@ List.fold_left (fun s {encoding_type; field_type; field_name} ->  
       match encoding_type with 
       | Regular_field {field_number; _ } -> 
           let constructor = constructor_name (string_of_field_type false field_type) in  
-          s ^ P.sprintf "      \n%s = (match required %i l with | `%s __v -> __v | _ -> e());"
+          s ^ P.sprintf "\n%s = (match required %i l with | `%s __v -> __v | _ -> e());"
               field_name field_number constructor
-      | One_of -> failwith "One_of not supported"
+      | One_of {constructors; variant_name} -> 
+          let all_numbers = List.fold_left (fun s {encoding_type; _ } -> 
+            match encoding_type with
+            | Regular_field {field_number; _ } -> s ^ (P.sprintf "%i;" field_number)
+            | One_of _ -> failwith "Programatic error"
+          ) "[" constructors in 
+          let all_numbers = all_numbers ^ "]" in 
+          s ^ P.sprintf "\n%s = (match oneof %sl with | `%s __v -> __v | _ -> e());"
+              field_name all_numbers (constructor_name variant_name)
     ) "" fields in 
-    let s = s ^ "\n  }" in 
+    let s = s ^ "\n    }" in 
     s ^ "\n  )"
      
 end 

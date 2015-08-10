@@ -33,16 +33,17 @@ let () =
   let otypes = List.fold_left (fun otypes m -> 
     otypes @ BO.compile astc_msgs m 
   ) [] astc_msgs in 
-  let s = BO.Print.prefix_payload_to_ocaml_t in 
-  let s = s ^ BO.Print.prefix_decode_f in 
+  let s = Backend_ocaml_static.prefix_payload_to_ocaml_t in 
+  let s = s ^ Backend_ocaml_static.prefix_decode_f in 
+  let s = s ^ "\n" in  
   let s = List.fold_left (fun s -> function 
     | BO.Record r -> 
-      s ^ "\n\n" ^ 
+      s ^ 
       BO.Print.gen_record_type r ^ "\n\n" ^ 
-      BO.Print.gen_mappings r ^  "\n\n" ^ 
-      BO.Print.gen_decode r 
-    | BO.Variant _ -> 
-      failwith "Variant not supported"
+      BO.Print.gen_decode r ^ "\n\n" 
+    | BO.Variant v -> 
+      s ^ 
+      BO.Print.gen_variant_type v ^ "\n\n"
   ) s otypes in 
   output_string oc s 
   

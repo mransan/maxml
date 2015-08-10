@@ -645,8 +645,8 @@ let () =
     in 
     let ocaml_types = compile_to_ocaml s in 
     assert(2 = List.length ocaml_types); 
-    assert(
-      BO.(Variant {
+    
+    let variant = BO.({
         variant_name  = "m1_o1"; 
         constructors = [
           {field_type = Int; field_name = "Intv"; is_option = false;
@@ -654,13 +654,14 @@ let () =
           {field_type = String; field_name = "Stringv"; is_option = false;
            encoding_type = Regular_field {field_number = 2; payload_kind = Pc.Bytes}};
         ];
-      }) = List.nth ocaml_types 0);
+      }) in
+    assert(BO.Variant variant = List.nth ocaml_types 0);
     assert(
       BO.(Record {
         record_name = "m1"; 
         fields = [
           {field_type = User_defined "m1_o1"; field_name = "o1"; is_option = false;
-          encoding_type = One_of };
+          encoding_type = One_of variant};
           {field_type = Int; field_name = "v1"; is_option = false;
            encoding_type = Regular_field {field_number = 3; payload_kind = Pc.Varint}};
         ];

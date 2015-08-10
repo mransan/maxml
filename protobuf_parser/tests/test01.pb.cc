@@ -21,6 +21,10 @@ namespace {
 const ::google::protobuf::Descriptor* N_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   N_reflection_ = NULL;
+struct NOneofInstance {
+  ::google::protobuf::int32 o1_;
+  const ::std::string* o2_;
+}* N_default_oneof_instance_ = NULL;
 const ::google::protobuf::Descriptor* N_M_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   N_M_reflection_ = NULL;
@@ -35,9 +39,12 @@ void protobuf_AssignDesc_test01_2eproto() {
       "test01.proto");
   GOOGLE_CHECK(file != NULL);
   N_descriptor_ = file->message_type(0);
-  static const int N_offsets_[2] = {
+  static const int N_offsets_[5] = {
+    PROTO2_GENERATED_DEFAULT_ONEOF_FIELD_OFFSET(N_default_oneof_instance_, o1_),
+    PROTO2_GENERATED_DEFAULT_ONEOF_FIELD_OFFSET(N_default_oneof_instance_, o2_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(N, n1_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(N, n2_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(N, O_),
   };
   N_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -47,6 +54,8 @@ void protobuf_AssignDesc_test01_2eproto() {
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(N, _has_bits_[0]),
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(N, _unknown_fields_),
       -1,
+      N_default_oneof_instance_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(N, _oneof_case_[0]),
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(N));
@@ -88,6 +97,7 @@ void protobuf_RegisterTypes(const ::std::string&) {
 
 void protobuf_ShutdownFile_test01_2eproto() {
   delete N::default_instance_;
+  delete N_default_oneof_instance_;
   delete N_reflection_;
   delete N_M::default_instance_;
   delete N_M_reflection_;
@@ -100,11 +110,13 @@ void protobuf_AddDesc_test01_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\014test01.proto\">\n\001N\022\n\n\002n1\030\001 \002(\002\022\020\n\002n2\030\002 "
-    "\002(\0132\004.N.M\032\033\n\001M\022\n\n\002v1\030\001 \002(\005\022\n\n\002v2\030\002 \002(\t", 78);
+    "\n\014test01.proto\"_\n\001N\022\014\n\002o1\030\003 \001(\005H\000\022\014\n\002o2\030"
+    "\004 \001(\tH\000\022\n\n\002n1\030\001 \002(\002\022\020\n\002n2\030\002 \002(\0132\004.N.M\032\033\n"
+    "\001M\022\n\n\002v1\030\001 \002(\005\022\n\n\002v2\030\002 \002(\tB\003\n\001O", 111);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "test01.proto", &protobuf_RegisterTypes);
   N::default_instance_ = new N();
+  N_default_oneof_instance_ = new NOneofInstance;
   N_M::default_instance_ = new N_M();
   N::default_instance_->InitAsDefaultInstance();
   N_M::default_instance_->InitAsDefaultInstance();
@@ -406,6 +418,8 @@ void N_M::Swap(N_M* other) {
 // -------------------------------------------------------------------
 
 #ifndef _MSC_VER
+const int N::kO1FieldNumber;
+const int N::kO2FieldNumber;
 const int N::kN1FieldNumber;
 const int N::kN2FieldNumber;
 #endif  // !_MSC_VER
@@ -417,6 +431,8 @@ N::N()
 }
 
 void N::InitAsDefaultInstance() {
+  N_default_oneof_instance_->o1_ = 0;
+  N_default_oneof_instance_->o2_ = &::google::protobuf::internal::GetEmptyStringAlreadyInited();
   n2_ = const_cast< ::N_M*>(&::N_M::default_instance());
 }
 
@@ -428,10 +444,12 @@ N::N(const N& from)
 }
 
 void N::SharedCtor() {
+  ::google::protobuf::internal::GetEmptyString();
   _cached_size_ = 0;
   n1_ = 0;
   n2_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  clear_has_O();
 }
 
 N::~N() {
@@ -440,6 +458,9 @@ N::~N() {
 }
 
 void N::SharedDtor() {
+  if (has_O()) {
+    clear_O();
+  }
   if (this != default_instance_) {
     delete n2_;
   }
@@ -466,13 +487,32 @@ N* N::New() const {
   return new N;
 }
 
+void N::clear_O() {
+  switch(O_case()) {
+    case kO1: {
+      // No need to clear
+      break;
+    }
+    case kO2: {
+      delete O_.o2_;
+      break;
+    }
+    case O_NOT_SET: {
+      break;
+    }
+  }
+  _oneof_case_[0] = O_NOT_SET;
+}
+
+
 void N::Clear() {
-  if (_has_bits_[0 / 32] & 3) {
+  if (_has_bits_[0 / 32] & 12) {
     n1_ = 0;
     if (has_n2()) {
       if (n2_ != NULL) n2_->::N_M::Clear();
     }
   }
+  clear_O();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
 }
@@ -507,6 +547,39 @@ bool N::MergePartialFromCodedStream(
          parse_n2:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
                input, mutable_n2()));
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(24)) goto parse_o1;
+        break;
+      }
+
+      // optional int32 o1 = 3;
+      case 3: {
+        if (tag == 24) {
+         parse_o1:
+          clear_O();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &O_.o1_)));
+          set_has_o1();
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(34)) goto parse_o2;
+        break;
+      }
+
+      // optional string o2 = 4;
+      case 4: {
+        if (tag == 34) {
+         parse_o2:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_o2()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
+            this->o2().data(), this->o2().length(),
+            ::google::protobuf::internal::WireFormat::PARSE,
+            "o2");
         } else {
           goto handle_unusual;
         }
@@ -550,6 +623,21 @@ void N::SerializeWithCachedSizes(
       2, this->n2(), output);
   }
 
+  // optional int32 o1 = 3;
+  if (has_o1()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(3, this->o1(), output);
+  }
+
+  // optional string o2 = 4;
+  if (has_o2()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
+      this->o2().data(), this->o2().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "o2");
+    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
+      4, this->o2(), output);
+  }
+
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -572,6 +660,22 @@ void N::SerializeWithCachedSizes(
         2, this->n2(), target);
   }
 
+  // optional int32 o1 = 3;
+  if (has_o1()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(3, this->o1(), target);
+  }
+
+  // optional string o2 = 4;
+  if (has_o2()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
+      this->o2().data(), this->o2().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "o2");
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        4, this->o2(), target);
+  }
+
   if (!unknown_fields().empty()) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
@@ -583,7 +687,7 @@ void N::SerializeWithCachedSizes(
 int N::ByteSize() const {
   int total_size = 0;
 
-  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+  if (_has_bits_[2 / 32] & (0xffu << (2 % 32))) {
     // required float n1 = 1;
     if (has_n1()) {
       total_size += 1 + 4;
@@ -596,6 +700,25 @@ int N::ByteSize() const {
           this->n2());
     }
 
+  }
+  switch (O_case()) {
+    // optional int32 o1 = 3;
+    case kO1: {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::Int32Size(
+          this->o1());
+      break;
+    }
+    // optional string o2 = 4;
+    case kO2: {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->o2());
+      break;
+    }
+    case O_NOT_SET: {
+      break;
+    }
   }
   if (!unknown_fields().empty()) {
     total_size +=
@@ -622,7 +745,20 @@ void N::MergeFrom(const ::google::protobuf::Message& from) {
 
 void N::MergeFrom(const N& from) {
   GOOGLE_CHECK_NE(&from, this);
-  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+  switch (from.O_case()) {
+    case kO1: {
+      set_o1(from.o1());
+      break;
+    }
+    case kO2: {
+      set_o2(from.o2());
+      break;
+    }
+    case O_NOT_SET: {
+      break;
+    }
+  }
+  if (from._has_bits_[2 / 32] & (0xffu << (2 % 32))) {
     if (from.has_n1()) {
       set_n1(from.n1());
     }
@@ -646,7 +782,7 @@ void N::CopyFrom(const N& from) {
 }
 
 bool N::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
+  if ((_has_bits_[0] & 0x0000000c) != 0x0000000c) return false;
 
   if (has_n2()) {
     if (!this->n2().IsInitialized()) return false;
@@ -658,6 +794,8 @@ void N::Swap(N* other) {
   if (other != this) {
     std::swap(n1_, other->n1_);
     std::swap(n2_, other->n2_);
+    std::swap(O_, other->O_);
+    std::swap(_oneof_case_[0], other->_oneof_case_[0]);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
