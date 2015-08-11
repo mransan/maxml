@@ -177,14 +177,14 @@ let () =
     }"
     in 
     let ast  = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast in  
+    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in  
     assert (List.length all_messages = 1);
     let {
       Astc.message_scope; 
       Astc.message_name;
       Astc.body_content; 
     } = List.hd all_messages in 
-    assert ([] = message_scope);
+    assert (Astc_util.empty_scope = message_scope);
     assert ("Test" = message_name); 
     assert (2 = List.length body_content); 
     
@@ -221,25 +221,28 @@ let () =
     }"
     in 
     let ast  = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast in  
+    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in  
     assert (List.length all_messages = 2);
     let {
       Astc.message_scope; 
       Astc.message_name;
       Astc.body_content; 
     } = List.hd all_messages in 
-    assert (1 = List.length message_scope);
+    assert (1 = List.length message_scope.Astc.message_names);
     assert ("Inner" = message_name); 
     assert (2 = List.length body_content); 
     test_fields body_content; 
-    let expected_scope = [ Astc.Message_name "Test" ] in 
+    let expected_scope = {
+      Astc.namespaces = []; 
+      Astc.message_names = [ "Test" ] 
+    } in 
     assert(expected_scope = message_scope);
     let {
       Astc.message_scope; 
       Astc.message_name;
       Astc.body_content; 
     } = List.nth all_messages 1 in 
-    assert ([] = message_scope);
+    assert (Astc_util.empty_scope = message_scope);
     assert ("Test" = message_name); 
     assert (0 = List.length body_content); 
     ()
@@ -251,14 +254,14 @@ let () =
     }"
     in 
     let ast  = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast in  
+    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in  
     assert (List.length all_messages = 1);
     let {
       Astc.message_scope; 
       Astc.message_name;
       Astc.body_content; 
     } = List.hd all_messages in 
-    assert ([] = message_scope);
+    assert (Astc_util.empty_scope  = message_scope);
     assert ("Test" = message_name); 
     assert (1 = List.length body_content); 
     let f1 = List.nth body_content 0 in 
@@ -282,7 +285,7 @@ let () =
     }
     " in 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast in 
+    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope  ast in 
     assert (6 = List.length all_messages); 
     let filtered = Astc_util.find_all_message_in_field_scope all_messages [] in 
     assert (1 = List.length filtered);
@@ -329,7 +332,7 @@ let () =
     }
     " in 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast in 
+    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
     ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages; 
     ()
   in 
@@ -342,7 +345,7 @@ let () =
 
   let test_unresolved_msg s = 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast in 
+    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
     assert_unresolved (fun () -> 
       ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages
     )
@@ -396,7 +399,7 @@ let () =
   let test_duplicate s = 
     let ast = parse Parser.message_ s in 
     assert_duplicate (fun () -> 
-      let all_messages = Astc_util.compile_message_p1 [] ast in 
+      let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
       ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages
     )
   in
@@ -528,30 +531,28 @@ let () =
     (* TODO this could really be improved to be Test_blah *)
   in 
   let () = 
-    let message_scope = [
-      Astc.Namespace "ab";
-      Astc.Namespace "cd"; 
-      Astc.Message_name "foo";
-      Astc.Message_name "bar";
-    ] in 
+    let message_scope = {
+      Astc.namespaces = ["ab"; "cd"]; 
+      Astc.message_names = ["foo"; "bar"] 
+    } in 
     let message_name = "test" in 
     assert("Ab.Cd.foo_bar_test" = Backend_ocaml.type_name_of_message message_scope message_name);
     ()
   in 
   let () = 
-    let message_scope = [
-      Astc.Namespace "ab";
-      Astc.Namespace "cd"; 
-    ] in 
+    let message_scope = { 
+      Astc.namespaces = ["ab"; "cd"]; 
+      Astc.message_names = []; 
+    } in 
     let message_name = "test" in 
     assert("Ab.Cd.test" = Backend_ocaml.type_name_of_message message_scope message_name);
     ()
   in 
   let () = 
-    let message_scope = [
-      Astc.Message_name "foo";
-      Astc.Message_name "bar";
-    ] in 
+    let message_scope = {
+      Astc.message_names  = ["foo";"bar";]; 
+      Astc.namespaces = [];
+    } in 
     let message_name = "test" in 
     assert("foo_bar_test" = Backend_ocaml.type_name_of_message message_scope message_name);
     ()
@@ -559,7 +560,7 @@ let () =
   let module BO = Backend_ocaml in 
   let compile_to_ocaml s = 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 [] ast in 
+    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
     let all_messages = List.map (fun m -> 
       Astc_util.compile_message_p2 all_messages m
     ) all_messages in 
@@ -695,15 +696,13 @@ let () =
   v3 : other;
 }|} in 
 
-    assert(s = BO.Print.gen_record_type r);
+    assert(s = BO.Codegen.gen_record_type r);
     let s = {|let test_mappings = [
   (1, (fun d -> `Int (decode_varint_as_int d)));
   (2, (fun d -> `String (decode_bytes_as_string d)));
   (3, (fun d -> `Other (decode_sub decode_other d)));
 ]|} in
-    print_endline (BO.Print.gen_mappings r);
-    assert (s = BO.Print.gen_mappings r);
-    print_endline (BO.Print.gen_decode r);
+    assert (s = BO.Codegen.gen_mappings r);
     ()
   in 
   print_endline "\n--- Good ---";

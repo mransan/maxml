@@ -58,6 +58,8 @@ let field_type {Astc.field_type; _ } =
 let field_label {Astc.field_parsed = {Ast.field_label; _ }; _ } = 
   field_label 
 
+let empty_scope  = { Astc.namespaces = []; Astc.message_names = [] } 
+
 let unresolved_of_string s = 
   let rec loop i l = 
     try 
@@ -196,7 +198,10 @@ let rec compile_message_p1 message_scope ({
   Ast.body_content; 
 })  = 
   
-  let sub_scope = message_scope @ [ Astc.Message_name message_name] in 
+  let {Astc.message_names; _ } = message_scope in  
+  let sub_scope = {message_scope with 
+    Astc.message_names = message_names @ [ message_name] 
+  } in 
   
   let body_content, all_sub = List.fold_left (fun (body_content, all_messages) -> function  
     | Ast.Message_field f -> 
@@ -244,18 +249,15 @@ let rec compile_message_p1 message_scope ({
   }] 
 
 let find_all_message_in_field_scope messages scope = 
-  List.filter (fun { Astc.message_scope;_ } -> 
-    let dec_scope = List.map (function 
-      | Astc.Namespace x -> x
-      | Astc.Message_name x -> x
-    ) message_scope in 
+  List.filter (fun { Astc.message_scope = {Astc.namespaces; Astc.message_names} ;_ } -> 
+    let dec_scope = namespaces @ message_names in 
     dec_scope = scope
   ) messages 
 
   
 let compile_message_p2 messages ({
   Astc.message_name; 
-  Astc.message_scope;
+  Astc.message_scope = {Astc.namespaces ; Astc.message_names; }; 
   Astc.body_content} as message)  = 
 
   (* stringify the message scope so that it can 
@@ -263,9 +265,7 @@ let compile_message_p2 messages ({
      
      see `Note on scoping` in the README.md file
    *)
-  let message_scope = List.map (function 
-    | Astc.Namespace    x -> x
-    | Astc.Message_name x -> x) (message_scope @ [Astc.Message_name message_name]) in
+  let message_scope = namespaces @ message_names @ [message_name] in 
 
   let process_field_in_scope messages scope type_name = 
     let messages  = find_all_message_in_field_scope messages scope in 

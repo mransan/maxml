@@ -40,11 +40,10 @@ type 'a oneof = {
   oneof_fields : ('a, Ast.oneof_label) field list; 
 }
 
-type message_scope_item = 
-  | Namespace of string 
-  | Message_name of string 
-
-type message_scope = message_scope_item list 
+type message_scope = {
+  namespaces : string list; 
+  message_names : string list; 
+}
 
 type 'a message_body_content = 
   | Message_field       of ('a, Ast.field_label) field 

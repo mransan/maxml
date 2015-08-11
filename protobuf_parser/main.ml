@@ -30,7 +30,7 @@ let () =
   let ast_msg = 
     Parser.message_ Lexer.lexer (Lexing.from_channel ic)
   in 
-  let astc_msgs = Astc_util.compile_message_p1 [] ast_msg in 
+  let astc_msgs = Astc_util.compile_message_p1 Astc_util.empty_scope ast_msg in 
   let astc_msgs = List.map (Astc_util.compile_message_p2 astc_msgs) astc_msgs in 
   let module BO = Backend_ocaml in 
   let otypes = List.fold_left (fun otypes m -> 
@@ -42,21 +42,21 @@ let () =
   let s = List.fold_left (fun s -> function 
     | BO.Record r -> 
       s ^ 
-      BO.Print.gen_record_type r ^ "\n\n" ^ 
-      BO.Print.gen_decode r ^ "\n\n" 
+      BO.Codegen.gen_record_type r ^ "\n\n" ^ 
+      BO.Codegen.gen_decode r ^ "\n\n" 
     | BO.Variant v -> 
       s ^ 
-      BO.Print.gen_variant_type v ^ "\n\n"
+      BO.Codegen.gen_variant_type v ^ "\n\n"
   ) s otypes in 
   output_string struct_oc s;  
   let s = List.fold_left (fun s -> function 
     | BO.Record r -> 
       s ^ 
-      BO.Print.gen_record_type r ^ "\n\n" ^ 
-      BO.Print.gen_decode_sig  r ^ "\n\n" 
+      BO.Codegen.gen_record_type r ^ "\n\n" ^ 
+      BO.Codegen.gen_decode_sig  r ^ "\n\n" 
     | BO.Variant v -> 
       s ^ 
-      BO.Print.gen_variant_type v ^ "\n\n"
+      BO.Codegen.gen_variant_type v ^ "\n\n"
   ) "" otypes in
   output_string sig_oc s  
   

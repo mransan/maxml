@@ -71,32 +71,32 @@ let constructor_name s =
 let record_field_name s =
   String.lowercase_ascii s 
 
+let empty = function | [] -> true | _ -> false 
+
 let type_name_of_message message_scope message_name = 
   let module S = String in 
 
-  match message_scope with 
-  | [] -> S.lowercase_ascii message_name
-  | _  -> 
-    let all_namespaces, all_message_names = List.partition (function
-      | Astc.Namespace   _  -> true
-      | Astc.Message_name _ -> false 
-    ) message_scope in 
+  let {Astc.namespaces; Astc.message_names} = message_scope in 
 
-    let to_ocaml_name = function
-      | Astc.Namespace s -> S.capitalize_ascii @@ S.lowercase_ascii s 
-      | Astc.Message_name s -> S.lowercase_ascii s 
-    in
+  if empty namespaces && empty message_names 
+  then S.lowercase_ascii message_name 
+  else 
 
-    let module_prefix = match all_namespaces with
+    let namespaces = List.map (fun s -> 
+      S.capitalize_ascii @@ S.lowercase_ascii s
+    ) namespaces in 
+    let message_names = List.map S.lowercase_ascii message_names in 
+
+    let module_prefix = match namespaces with
       | [] -> ""
       | _  -> 
-        S.concat "." (List.map to_ocaml_name all_namespaces) ^ "."
+        S.concat "." namespaces  ^ "."
     in 
-    match all_message_names with
+    match message_names with
     | [] -> module_prefix^ (S.lowercase_ascii message_name)
     | _  -> 
       module_prefix ^ 
-      S.concat "_" (List.map to_ocaml_name all_message_names) ^ 
+      S.concat "_" message_names ^ 
       "_" ^
       S.lowercase_ascii message_name 
 
@@ -107,7 +107,7 @@ let get_type_name_from_all_messages all_messages i =
     type_name_of_message message_scope message_name
   with | Not_found -> failwith "Programmatic error could not find type"
 
-let process_field ?as_constructor ?is_option all_messages field = 
+let compile_field ?as_constructor ?is_option all_messages field = 
   let field_name = Astc_util.field_name field in 
   let encoding_type = Astc_util.field_type field in 
 
@@ -153,7 +153,7 @@ let process_field ?as_constructor ?is_option all_messages field =
 let compile_oneof all_messages message_scope {Astc.oneof_name ; Astc.oneof_fields } = 
   let variant_name = type_name message_scope oneof_name in 
   let constructors = List.map (fun field -> 
-    process_field ~as_constructor:() all_messages field 
+    compile_field ~as_constructor:() all_messages field 
   ) oneof_fields in 
   { variant_name; constructors; }
 
@@ -163,17 +163,12 @@ let compile
   type_ list   = 
 
   let {
-    Astc.message_scope;
+    Astc.message_scope = {Astc.message_names; Astc.namespaces = _ } ;
     Astc.message_name; 
     Astc.body_content; 
   } = message in 
 
-  let message_scope = List.rev @@ List.fold_left (fun acc -> function
-    | Astc.Namespace _ -> acc
-    | Astc.Message_name s -> s::acc
-  ) [] message_scope in 
-
-  let record_name = type_name message_scope message_name in 
+  let record_name = type_name message_names message_name in 
   let variants, fields = List.fold_left (fun (variants, fields) -> function
     | Astc.Message_field f -> (
       let is_option = match Astc_util.field_label f with 
@@ -181,10 +176,10 @@ let compile
         | `Required -> None 
         | `Repeated -> failwith "Repeated not supported"
       in 
-      (variants, (process_field ?is_option all_messages f)::fields)
+      (variants, (compile_field ?is_option all_messages f)::fields)
     )
     | Astc.Message_oneof_field f -> (
-      let variant = compile_oneof all_messages (message_scope @ [message_name]) f in 
+      let variant = compile_oneof all_messages (message_names @ [message_name]) f in 
       let field   = {
         field_type =  User_defined (variant.variant_name); 
         field_name =  record_field_name f.Astc.oneof_name;
@@ -200,7 +195,7 @@ let compile
     fields = List.rev fields;
   } :: variants)
 
-module Print = struct 
+module Codegen = struct 
   module P = Printf
 
   let add_indentation n s = 
