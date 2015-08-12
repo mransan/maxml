@@ -17,6 +17,8 @@ val field_label  : ('a, 'b)  Astc.field -> 'b
 
 val empty_scope : Astc.message_scope 
 
+val scope_of_package : string option -> Astc.message_scope 
+
 (** {2 Compilation errors } *)
 
 type error = 

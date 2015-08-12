@@ -27,10 +27,13 @@ let parse_args () =
 let () = 
 
   let ic, sig_oc, struct_oc = parse_args () in 
-  let ast_msg = 
-    Parser.message_ Lexer.lexer (Lexing.from_channel ic)
+  let proto = 
+    Parser.proto_ Lexer.lexer (Lexing.from_channel ic)
   in 
-  let astc_msgs = Astc_util.compile_message_p1 Astc_util.empty_scope ast_msg in 
+  let scope     = Astc_util.scope_of_package proto.Ast.package in 
+  let astc_msgs = List.fold_left (fun astc_msgs ast_msg -> 
+    astc_msgs @ Astc_util.compile_message_p1 scope ast_msg
+  ) [] proto.Ast.messages in 
   let astc_msgs = List.map (Astc_util.compile_message_p2 astc_msgs) astc_msgs in 
   let module BO = Backend_ocaml in 
   let otypes = List.fold_left (fun otypes m -> 
@@ -59,7 +62,3 @@ let () =
       BO.Codegen.gen_variant_type v ^ "\n\n"
   ) "" otypes in
   output_string sig_oc s  
-  
-   
-
-

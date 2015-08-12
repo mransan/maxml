@@ -8,6 +8,7 @@ let string_of_token = function
   | Parser.REPEATED     ->  "REPEATED" 
   | Parser.ONE_OF       ->  "ONE_OF"
   | Parser.MESSAGE      ->  "MESSAGE"
+  | Parser.PACKAGE      ->  "PACKAGE"
   | Parser.RBRACE       ->  "RBRACE" 
   | Parser.LBRACE       ->  "LBRACE" 
   | Parser.RBRACKET     ->  "RBRACKET"
@@ -705,5 +706,37 @@ let () =
     assert (s = BO.Codegen.gen_mappings r);
     ()
   in 
+  let () = 
+    let s =" 
+    message Test {
+    }" in 
+    let messages  = parse Parser.message_list_ s in 
+    assert(1 = List.length messages);
+    ()
+  in
+  let () = 
+    let s =" 
+    message M1 {} 
+    message M2 {}
+    " in 
+    let messages  = parse Parser.message_list_ s in 
+    assert(2= List.length messages);
+    assert("M1" = (List.nth messages 0).Ast.message_name);
+    assert("M2" = (List.nth messages 1).Ast.message_name);
+    ()
+  in
+  let () = 
+    let s =" 
+    package my.proto;
+    message M1 {} 
+    message M2 {}
+    " in 
+    let proto = parse Parser.proto_ s in 
+    assert(Some "my.proto" = proto.Ast.package);
+    assert(2= List.length proto.Ast.messages);
+    assert("M1" = (List.nth proto.Ast.messages 0).Ast.message_name);
+    assert("M2" = (List.nth proto.Ast.messages 1).Ast.message_name);
+    ()
+  in
   print_endline "\n--- Good ---";
   ()

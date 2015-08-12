@@ -41,3 +41,8 @@ and message = {
   message_name : string; 
   body_content : message_body_content list; 
 }
+
+type proto = {
+  package : string option; 
+  messages : message list; 
+}

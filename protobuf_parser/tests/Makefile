@@ -23,7 +23,7 @@ test01_ml.tsk: test01_types.mli test01_types.ml test01_ml.ml
 
 .PHONY: all clean test_01 
 
-test01: test01.tsk test01_ml.tsk 
+test01: test01_ml.tsk test01.tsk 
 	./test01.tsk
 	./test01_ml.tsk
 

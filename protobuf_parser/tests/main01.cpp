@@ -3,6 +3,8 @@
 #include <iostream>
 #include <fstream>
 
+// using namespace blah::foo; 
+
 int main() {
 
     N_M m; 
@@ -15,8 +17,12 @@ int main() {
     n.set_o1(123);
     n.set_o2("i am o2");
 
+    P p;
+    *(p.mutable_n()) = n;
+    *(p.mutable_m()) = m; 
+
     std::ofstream out("test01.data");
-    n.SerializeToOstream(&out);
+    p.SerializeToOstream(&out);
     if(! out.good()) {
         std::cerr << "Error writing message to file"
                   << std::endl;

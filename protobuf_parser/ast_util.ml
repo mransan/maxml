@@ -34,6 +34,11 @@ let message ~content name =
     body_content = content;
   } 
 
+let proto ?package messages = {
+  Ast.package; 
+  Ast.messages; 
+}
+
 let rec message_printer ?level:(level = 0) {
   Ast.message_name; 
   Ast.body_content; } = 

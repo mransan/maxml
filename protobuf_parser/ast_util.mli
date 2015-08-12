@@ -36,4 +36,7 @@ val message :
   string -> 
   Ast.message
 
+val proto : ?package:string -> Ast.message list -> Ast.proto
+
 val message_printer :?level:int -> Ast.message -> unit 
+

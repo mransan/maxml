@@ -16,6 +16,7 @@ let keywords = create_hashtable 50 [
   "repeated", REPEATED;
   "oneof"   , ONE_OF;
   "message" , MESSAGE;
+  "package" , PACKAGE;
 ]
 
 let resolve_identifier ident = 

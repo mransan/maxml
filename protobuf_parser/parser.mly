@@ -7,6 +7,8 @@
 
 %token MESSAGE
 
+%token PACKAGE
+
 %token RBRACE
 %token LBRACE
 %token RBRACKET
@@ -35,12 +37,21 @@
 
 %start message_
 %type <Ast.message> message_
+
+%start message_list_
+%type <Ast.message list> message_list_
+
+%start proto_ 
+%type <Ast.proto> proto_
+
 %%
 
 field_options_ : field_options EOF {$1}  
 normal_field_  : normal_field  EOF {$1}
 oneof_         : oneof EOF         {$1} 
-message_       : message EOF        {$1} 
+message_       : message EOF       {$1} 
+message_list_  : message_list EOF  {$1} 
+proto_         : proto EOF         {$1} 
 
 
 /*
@@ -48,6 +59,17 @@ message = "message" messageName messageBody
 messageBody = "{" { field | enum | message | extend | extensions | group |
 option | oneof | mapField | reserved | emptyStatement } "}"
 */
+
+proto:
+  | package_declaration message_list {Ast_util.proto ~package:$1 $2}
+  | message_list {Ast_util.proto $1}
+
+package_declaration :
+  | PACKAGE IDENT SEMICOLON  {$2}  
+
+message_list:  
+  | message  {[$1]}
+  | message message_list {$1::$2}
 
 message : 
   | MESSAGE IDENT LBRACE message_body_content_list RBRACE { 

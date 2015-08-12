@@ -33,6 +33,7 @@ void protobuf_ShutdownFile_test01_2eproto();
 
 class N;
 class N_M;
+class P;
 
 // ===================================================================
 
@@ -258,6 +259,99 @@ class N : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static N* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class P : public ::google::protobuf::Message {
+ public:
+  P();
+  virtual ~P();
+
+  P(const P& from);
+
+  inline P& operator=(const P& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const P& default_instance();
+
+  void Swap(P* other);
+
+  // implements Message ----------------------------------------------
+
+  P* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const P& from);
+  void MergeFrom(const P& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required .N n = 1;
+  inline bool has_n() const;
+  inline void clear_n();
+  static const int kNFieldNumber = 1;
+  inline const ::N& n() const;
+  inline ::N* mutable_n();
+  inline ::N* release_n();
+  inline void set_allocated_n(::N* n);
+
+  // required .N.M m = 2;
+  inline bool has_m() const;
+  inline void clear_m();
+  static const int kMFieldNumber = 2;
+  inline const ::N_M& m() const;
+  inline ::N_M* mutable_m();
+  inline ::N_M* release_m();
+  inline void set_allocated_m(::N_M* m);
+
+  // @@protoc_insertion_point(class_scope:P)
+ private:
+  inline void set_has_n();
+  inline void clear_has_n();
+  inline void set_has_m();
+  inline void clear_has_m();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::uint32 _has_bits_[1];
+  mutable int _cached_size_;
+  ::N* n_;
+  ::N_M* m_;
+  friend void  protobuf_AddDesc_test01_2eproto();
+  friend void protobuf_AssignDesc_test01_2eproto();
+  friend void protobuf_ShutdownFile_test01_2eproto();
+
+  void InitAsDefaultInstance();
+  static P* default_instance_;
 };
 // ===================================================================
 
@@ -541,6 +635,92 @@ inline void N::clear_has_O() {
 inline N::OCase N::O_case() const {
   return N::OCase(_oneof_case_[0]);
 }
+// -------------------------------------------------------------------
+
+// P
+
+// required .N n = 1;
+inline bool P::has_n() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void P::set_has_n() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void P::clear_has_n() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void P::clear_n() {
+  if (n_ != NULL) n_->::N::Clear();
+  clear_has_n();
+}
+inline const ::N& P::n() const {
+  // @@protoc_insertion_point(field_get:P.n)
+  return n_ != NULL ? *n_ : *default_instance_->n_;
+}
+inline ::N* P::mutable_n() {
+  set_has_n();
+  if (n_ == NULL) n_ = new ::N;
+  // @@protoc_insertion_point(field_mutable:P.n)
+  return n_;
+}
+inline ::N* P::release_n() {
+  clear_has_n();
+  ::N* temp = n_;
+  n_ = NULL;
+  return temp;
+}
+inline void P::set_allocated_n(::N* n) {
+  delete n_;
+  n_ = n;
+  if (n) {
+    set_has_n();
+  } else {
+    clear_has_n();
+  }
+  // @@protoc_insertion_point(field_set_allocated:P.n)
+}
+
+// required .N.M m = 2;
+inline bool P::has_m() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void P::set_has_m() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void P::clear_has_m() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void P::clear_m() {
+  if (m_ != NULL) m_->::N_M::Clear();
+  clear_has_m();
+}
+inline const ::N_M& P::m() const {
+  // @@protoc_insertion_point(field_get:P.m)
+  return m_ != NULL ? *m_ : *default_instance_->m_;
+}
+inline ::N_M* P::mutable_m() {
+  set_has_m();
+  if (m_ == NULL) m_ = new ::N_M;
+  // @@protoc_insertion_point(field_mutable:P.m)
+  return m_;
+}
+inline ::N_M* P::release_m() {
+  clear_has_m();
+  ::N_M* temp = m_;
+  m_ = NULL;
+  return temp;
+}
+inline void P::set_allocated_m(::N_M* m) {
+  delete m_;
+  m_ = m;
+  if (m) {
+    set_has_m();
+  } else {
+    clear_has_m();
+  }
+  // @@protoc_insertion_point(field_set_allocated:P.m)
+}
+
 
 // @@protoc_insertion_point(namespace_scope)
 

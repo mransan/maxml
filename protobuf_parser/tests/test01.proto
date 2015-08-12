@@ -1,6 +1,4 @@
 
-
-
 message N {
     message M {
         required int32  v1 = 1; 
@@ -12,4 +10,8 @@ message N {
     }
     required float n1 = 1;
     required M n2 = 2;
+}
+message P { 
+    required N n = 1; 
+    required N.M m = 2;
 }

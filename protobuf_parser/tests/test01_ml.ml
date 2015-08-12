@@ -22,7 +22,8 @@ let () =
     | Types.O1 i -> Printf.sprintf "O1(int:%i)" i
     | Types.O2 s -> Printf.sprintf "02(str:%s)" s
   in  
-  let n = Types.decode_n decoder in  
+  let p = Types.decode_p decoder in  
+  let n = p.Types.n in 
   let m = n.Types.n2 in 
   Printf.printf "n.o  = %s \n" (string_of_n_o n.Types.o); 
   Printf.printf "n.n1 = %f \n" n.Types.n1; 

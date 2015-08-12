@@ -60,7 +60,7 @@ let field_label {Astc.field_parsed = {Ast.field_label; _ }; _ } =
 
 let empty_scope  = { Astc.namespaces = []; Astc.message_names = [] } 
 
-let unresolved_of_string s = 
+let rev_split_by_char c s = 
   let rec loop i l = 
     try 
       let i' = String.index_from s i '.' in 
@@ -68,8 +68,16 @@ let unresolved_of_string s =
       loop (i'+1) (if s' = "" then l else s'::l)  
     with Not_found -> (String.sub s i (String.length s - i) ):: l 
   in 
-  let l = loop 0 [] in 
-  match l with 
+  loop 0 []
+
+let scope_of_package = function
+  | Some s -> {empty_scope with 
+    Astc.namespaces = List.rev @@ rev_split_by_char '.' s
+  }
+  | None -> empty_scope 
+
+let unresolved_of_string s = 
+  match rev_split_by_char '.' s with 
   | [] -> failwith "Programmatic error"
   | hd :: tl -> {
     Astc.scope = (List.rev tl); 
@@ -254,7 +262,6 @@ let find_all_message_in_field_scope messages scope =
     dec_scope = scope
   ) messages 
 
-  
 let compile_message_p2 messages ({
   Astc.message_name; 
   Astc.message_scope = {Astc.namespaces ; Astc.message_names; }; 
