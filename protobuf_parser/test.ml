@@ -537,7 +537,8 @@ let () =
       Astc.message_names = ["foo"; "bar"] 
     } in 
     let message_name = "test" in 
-    assert("Ab.Cd.foo_bar_test" = Backend_ocaml.type_name_of_message message_scope message_name);
+    assert("Ab.Cd.foo_bar_test" 
+            = Backend_ocaml.type_name_of_message Astc_util.empty_scope message_scope message_name);
     ()
   in 
   let () = 
@@ -546,7 +547,8 @@ let () =
       Astc.message_names = []; 
     } in 
     let message_name = "test" in 
-    assert("Ab.Cd.test" = Backend_ocaml.type_name_of_message message_scope message_name);
+    assert("Ab.Cd.test" 
+           = Backend_ocaml.type_name_of_message Astc_util.empty_scope message_scope message_name);
     ()
   in 
   let () = 
@@ -555,9 +557,12 @@ let () =
       Astc.namespaces = [];
     } in 
     let message_name = "test" in 
-    assert("foo_bar_test" = Backend_ocaml.type_name_of_message message_scope message_name);
+    assert("foo_bar_test" 
+           = Backend_ocaml.type_name_of_message Astc_util.empty_scope message_scope message_name);
     ()
   in 
+  (** TODO: Add test cases for when the field_message_scope is NOT empty
+   *)
   let module BO = Backend_ocaml in 
   let compile_to_ocaml s = 
     let ast = parse Parser.message_ s in 

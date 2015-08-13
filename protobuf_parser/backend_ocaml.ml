@@ -73,8 +73,18 @@ let record_field_name s =
 
 let empty = function | [] -> true | _ -> false 
 
-let type_name_of_message message_scope message_name = 
+let type_name_of_message field_message_scope message_scope message_name = 
   let module S = String in 
+
+  let message_scope = 
+    (** TODO this is a brute force method which only works for 
+        field which are in the same namespaces as their types. 
+     *) 
+    if field_message_scope.Astc.namespaces = message_scope.Astc.namespaces 
+    then {message_scope with 
+      Astc.namespaces = [] 
+    }
+    else message_scope in  
 
   let {Astc.namespaces; Astc.message_names} = message_scope in 
 
@@ -100,14 +110,14 @@ let type_name_of_message message_scope message_name =
       "_" ^
       S.lowercase_ascii message_name 
 
-let get_type_name_from_all_messages all_messages i = 
+let get_type_name_from_all_messages field_message_scope all_messages i = 
   let module S = String in 
   try 
     let {Astc.message_scope; Astc.message_name; _ } = List.find (fun {Astc.id; _ } -> id = i) all_messages in 
-    type_name_of_message message_scope message_name
+    type_name_of_message field_message_scope message_scope message_name
   with | Not_found -> failwith "Programmatic error could not find type"
 
-let compile_field ?as_constructor ?is_option all_messages field = 
+let compile_field ?as_constructor ?is_option message_scope all_messages field = 
   let field_name = Astc_util.field_name field in 
   let encoding_type = Astc_util.field_type field in 
 
@@ -137,7 +147,7 @@ let compile_field ?as_constructor ?is_option all_messages field =
     | Astc.Field_type_string  -> String, Pc.Bytes
     | Astc.Field_type_bytes  -> Bytes, Pc.Bytes
     | Astc.Field_type_message i -> User_defined ( 
-      get_type_name_from_all_messages all_messages i
+      get_type_name_from_all_messages message_scope all_messages i
     ), Pc.Bytes
   in 
   {
@@ -150,10 +160,14 @@ let compile_field ?as_constructor ?is_option all_messages field =
     }; 
   }
 
-let compile_oneof all_messages message_scope {Astc.oneof_name ; Astc.oneof_fields } = 
-  let variant_name = type_name message_scope oneof_name in 
+let compile_oneof all_messages message_scope outer_message_name {Astc.oneof_name ; Astc.oneof_fields } = 
+  let {Astc.message_names; _ } = message_scope in 
+  let variant_name = type_name (message_names @ [outer_message_name]) oneof_name in 
   let constructors = List.map (fun field -> 
-    compile_field ~as_constructor:() all_messages field 
+    (** TODO fix hard coding the empty_scope and rather
+        pass down the appropriate scope.
+      *)
+    compile_field ~as_constructor:() message_scope all_messages field 
   ) oneof_fields in 
   { variant_name; constructors; }
 
@@ -163,11 +177,12 @@ let compile
   type_ list   = 
 
   let {
-    Astc.message_scope = {Astc.message_names; Astc.namespaces = _ } ;
+    Astc.message_scope;
     Astc.message_name; 
     Astc.body_content; 
   } = message in 
 
+  let {Astc.message_names; Astc.namespaces = _ } = message_scope in 
   let record_name = type_name message_names message_name in 
   let variants, fields = List.fold_left (fun (variants, fields) -> function
     | Astc.Message_field f -> (
@@ -176,10 +191,10 @@ let compile
         | `Required -> None 
         | `Repeated -> failwith "Repeated not supported"
       in 
-      (variants, (compile_field ?is_option all_messages f)::fields)
+      (variants, (compile_field message_scope ?is_option all_messages f)::fields)
     )
     | Astc.Message_oneof_field f -> (
-      let variant = compile_oneof all_messages (message_names @ [message_name]) f in 
+      let variant = compile_oneof all_messages message_scope message_name f in 
       let field   = {
         field_type =  User_defined (variant.variant_name); 
         field_name =  record_field_name f.Astc.oneof_name;
@@ -267,12 +282,24 @@ module Codegen = struct
     let s = s ^ "\n  in" in 
     let s = s ^ "\n  (fun d ->" in 
     let s = s ^ P.sprintf "\n    let l = decode d %s_mappings []  in  {" record_name in 
-    let s = s ^ add_indentation 3 @@ List.fold_left (fun s {encoding_type; field_type; field_name} ->  
+    let s = s ^ add_indentation 3 @@ List.fold_left (fun s field -> 
+      let {
+        encoding_type;
+        field_type; 
+        field_name; 
+        is_option;
+      } = field in 
       match encoding_type with 
-      | Regular_field {field_number; _ } -> 
+      | Regular_field {field_number; _ } -> ( 
           let constructor = constructor_name (string_of_field_type false field_type) in  
-          s ^ P.sprintf "\n%s = (match required %i l with | `%s __v -> __v | _ -> e());"
-              field_name field_number constructor
+          match is_option with
+          | false -> 
+            s ^ P.sprintf "\n%s = (match required %i l with | `%s __v -> __v | _ -> e());"
+                field_name field_number constructor
+          | true -> 
+            s ^ P.sprintf "\n%s = optional %i l (function | `%s __v -> __v | _ -> e());"
+                field_name field_number constructor
+      )
       | One_of {constructors; variant_name} -> 
           let all_numbers = List.fold_left (fun s {encoding_type; _ } -> 
             match encoding_type with

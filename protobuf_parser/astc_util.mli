@@ -13,6 +13,8 @@ val field_type   : ('a, 'b)  Astc.field -> 'a Astc.field_type
 val field_label  : ('a, 'b)  Astc.field -> 'b 
 (** [field_label field] returns the label of [field] *)
 
+val string_of_message : 'a Astc.message -> string 
+
 (** {2 Creator} *) 
 
 val empty_scope : Astc.message_scope 

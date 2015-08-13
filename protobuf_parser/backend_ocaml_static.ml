@@ -41,16 +41,18 @@ let rec decode decoder mappings values =
 let required number l = 
   List.assoc number l 
 
-let optional number l = 
+let optional number l f = 
   try 
-    Some (List.assoc number l) 
+    Some (f @@ List.assoc number l) 
   with | Not_found -> None 
+
+external identity: 'a -> 'a = "%identity"
 
 let oneof numbers l = 
   let ret = List.fold_left (fun x number -> 
     match x with 
     | Some _ -> x 
-    | None -> optional number l 
+    | None   -> optional number l identity  
  ) None numbers in 
  match ret with 
  | Some x -> x 

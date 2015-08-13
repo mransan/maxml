@@ -70,6 +70,27 @@ let rev_split_by_char c s =
   in 
   loop 0 []
 
+let string_of_string_list l = 
+  Printf.sprintf "[%s]" (String.concat "," l)
+
+let string_of_unresolved { Astc.scope; Astc.type_name; Astc.from_root }  =
+  Printf.sprintf "unresolved:{scope %s, type_name: %s, from_root: %b}"
+    (string_of_string_list scope) 
+    type_name 
+    from_root  
+
+let string_of_message_scope {Astc.namespaces; Astc.message_names}  = 
+  Printf.sprintf "scope:{namespaces:%s, message_names:%s}" 
+    (string_of_string_list namespaces)
+    (string_of_string_list message_names) 
+
+let string_of_message {Astc.id; Astc.message_scope; Astc.message_name; Astc.body_content} = 
+  Printf.sprintf "message: {id:%i, message_scope:%s, name:%s, field nb:%i}" 
+    id 
+    (string_of_message_scope message_scope) 
+    message_name
+    (List.length body_content)
+
 let scope_of_package = function
   | Some s -> {empty_scope with 
     Astc.namespaces = List.rev @@ rev_split_by_char '.' s
@@ -291,29 +312,42 @@ let compile_message_p2 messages ({
      the following scopes will be returned:
      [
        ['Msg1'; 'Msg2'; 'Msg3'];  // This would be the scope of the current msg
-       ['Msg2'; 'Msg3'; ];        // Outer message scope
-       ['Msg3'; ]                 // Top level scope
+       ['Msg1'; 'Msg2'; ];        // Outer message scope
+       ['Msg1'; ]                 // Outer message scope 
+       [ ]                        // Top level scope
      ]
   *)
   let search_scopes (field_scope:string list) from_root : (string list) list = 
     if from_root
     then [field_scope]
     else 
-      List.fold_left (fun all_scope_list (new_scope:string)  -> 
-        let last_scope = List.hd all_scope_list in 
-        (new_scope::last_scope)::all_scope_list
-      ) [field_scope] message_scope 
+      let rec loop scopes = function
+        | [] -> field_scope::scopes 
+        | (_::tl as l) -> 
+          loop ((List.rev l @ field_scope)::scopes) tl 
+      in 
+      List.rev @@ loop [] (List.rev message_scope) 
   in 
     
   let process_field_type message_name field = 
     let field_name = field_name field in 
+    Printf.printf "field_name: %s\n" field_name; 
     match field.Astc.field_type with 
-    | Astc.Field_type_message {Astc.scope; Astc.type_name; Astc.from_root} -> ( 
+    | Astc.Field_type_message ({Astc.scope; Astc.type_name; Astc.from_root} as unresolved) -> ( 
+      print_endline @@ string_of_unresolved unresolved ; 
+      
+      let search_scopes = search_scopes scope from_root in 
+
+      Printf.printf "message scope: %s\n" @@ string_of_string_list message_scope;
+      List.iteri (fun i scope -> 
+        Printf.printf "search_scope[%2i] : %s\n" i @@ string_of_string_list scope 
+      ) search_scopes;
+
       let id  = List.fold_left (fun id scope -> 
         match id with 
         | Some _ -> id 
         | None   -> process_field_in_scope messages scope type_name
-      ) None (search_scopes scope from_root) in 
+      ) None search_scopes in 
       
       match id with 
       | Some id -> (Astc.Field_type_message id:Astc.resolved Astc.field_type) 
