@@ -1,17 +1,23 @@
+package foo.bar;  
 
-message N {
-    message M {
-        required int32  v1 = 1; 
-        required string v2 = 2; 
+message Person {
+    message TelNumber {
+        required int32 area_code = 1;
+        required int32 number    = 2;
     }
-    oneof O {
-        int32  o1 = 3; 
-        string o2 = 4; 
+    required string     first_name    = 1; 
+    required string     last_name     = 2; 
+    required int32      date_of_birth = 3;
+    optional TelNumber  tel_number    = 4;  
+
+    oneof Employment {
+        int32  self_employed = 5; // value is unused  
+        string employed_by   = 6; // value is company name
     }
-    required float n1 = 1;
-    required M n2 = 2;
 }
-message P { 
-    required N n = 1; 
-    required N.M m = 2;
+
+message Couple {
+    required Person p1 = 1;
+    required Person p2 = 2; 
+    optional Person.TelNumber contact_number = 3;
 }

@@ -34,6 +34,10 @@ let () =
   let astc_msgs = List.fold_left (fun astc_msgs ast_msg -> 
     astc_msgs @ Astc_util.compile_message_p1 scope ast_msg
   ) [] proto.Ast.messages in 
+  Printf.printf "-- Phase 1 --\n"; 
+  List.iter (fun msg -> 
+    print_endline @@ Astc_util.string_of_message msg
+  ) astc_msgs; 
   let astc_msgs = List.map (Astc_util.compile_message_p2 astc_msgs) astc_msgs in 
   let module BO = Backend_ocaml in 
   let otypes = List.fold_left (fun otypes m -> 

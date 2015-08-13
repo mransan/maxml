@@ -26,25 +26,28 @@
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 
+namespace foo {
+namespace bar {
+
 // Internal implementation detail -- do not call these.
 void  protobuf_AddDesc_test01_2eproto();
 void protobuf_AssignDesc_test01_2eproto();
 void protobuf_ShutdownFile_test01_2eproto();
 
-class N;
-class N_M;
-class P;
+class Person;
+class Person_TelNumber;
+class Couple;
 
 // ===================================================================
 
-class N_M : public ::google::protobuf::Message {
+class Person_TelNumber : public ::google::protobuf::Message {
  public:
-  N_M();
-  virtual ~N_M();
+  Person_TelNumber();
+  virtual ~Person_TelNumber();
 
-  N_M(const N_M& from);
+  Person_TelNumber(const Person_TelNumber& from);
 
-  inline N_M& operator=(const N_M& from) {
+  inline Person_TelNumber& operator=(const Person_TelNumber& from) {
     CopyFrom(from);
     return *this;
   }
@@ -58,17 +61,17 @@ class N_M : public ::google::protobuf::Message {
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const N_M& default_instance();
+  static const Person_TelNumber& default_instance();
 
-  void Swap(N_M* other);
+  void Swap(Person_TelNumber* other);
 
   // implements Message ----------------------------------------------
 
-  N_M* New() const;
+  Person_TelNumber* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const N_M& from);
-  void MergeFrom(const N_M& from);
+  void CopyFrom(const Person_TelNumber& from);
+  void MergeFrom(const Person_TelNumber& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -90,55 +93,50 @@ class N_M : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required int32 v1 = 1;
-  inline bool has_v1() const;
-  inline void clear_v1();
-  static const int kV1FieldNumber = 1;
-  inline ::google::protobuf::int32 v1() const;
-  inline void set_v1(::google::protobuf::int32 value);
+  // required int32 area_code = 1;
+  inline bool has_area_code() const;
+  inline void clear_area_code();
+  static const int kAreaCodeFieldNumber = 1;
+  inline ::google::protobuf::int32 area_code() const;
+  inline void set_area_code(::google::protobuf::int32 value);
 
-  // required string v2 = 2;
-  inline bool has_v2() const;
-  inline void clear_v2();
-  static const int kV2FieldNumber = 2;
-  inline const ::std::string& v2() const;
-  inline void set_v2(const ::std::string& value);
-  inline void set_v2(const char* value);
-  inline void set_v2(const char* value, size_t size);
-  inline ::std::string* mutable_v2();
-  inline ::std::string* release_v2();
-  inline void set_allocated_v2(::std::string* v2);
+  // required int32 number = 2;
+  inline bool has_number() const;
+  inline void clear_number();
+  static const int kNumberFieldNumber = 2;
+  inline ::google::protobuf::int32 number() const;
+  inline void set_number(::google::protobuf::int32 value);
 
-  // @@protoc_insertion_point(class_scope:N.M)
+  // @@protoc_insertion_point(class_scope:foo.bar.Person.TelNumber)
  private:
-  inline void set_has_v1();
-  inline void clear_has_v1();
-  inline void set_has_v2();
-  inline void clear_has_v2();
+  inline void set_has_area_code();
+  inline void clear_has_area_code();
+  inline void set_has_number();
+  inline void clear_has_number();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
-  ::std::string* v2_;
-  ::google::protobuf::int32 v1_;
+  ::google::protobuf::int32 area_code_;
+  ::google::protobuf::int32 number_;
   friend void  protobuf_AddDesc_test01_2eproto();
   friend void protobuf_AssignDesc_test01_2eproto();
   friend void protobuf_ShutdownFile_test01_2eproto();
 
   void InitAsDefaultInstance();
-  static N_M* default_instance_;
+  static Person_TelNumber* default_instance_;
 };
 // -------------------------------------------------------------------
 
-class N : public ::google::protobuf::Message {
+class Person : public ::google::protobuf::Message {
  public:
-  N();
-  virtual ~N();
+  Person();
+  virtual ~Person();
 
-  N(const N& from);
+  Person(const Person& from);
 
-  inline N& operator=(const N& from) {
+  inline Person& operator=(const Person& from) {
     CopyFrom(from);
     return *this;
   }
@@ -152,23 +150,23 @@ class N : public ::google::protobuf::Message {
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const N& default_instance();
+  static const Person& default_instance();
 
-  enum OCase {
-    kO1 = 3,
-    kO2 = 4,
-    O_NOT_SET = 0,
+  enum EmploymentCase {
+    kSelfEmployed = 5,
+    kEmployedBy = 6,
+    EMPLOYMENT_NOT_SET = 0,
   };
 
-  void Swap(N* other);
+  void Swap(Person* other);
 
   // implements Message ----------------------------------------------
 
-  N* New() const;
+  Person* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const N& from);
-  void MergeFrom(const N& from);
+  void CopyFrom(const Person& from);
+  void MergeFrom(const Person& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -188,69 +186,99 @@ class N : public ::google::protobuf::Message {
 
   // nested types ----------------------------------------------------
 
-  typedef N_M M;
+  typedef Person_TelNumber TelNumber;
 
   // accessors -------------------------------------------------------
 
-  // optional int32 o1 = 3;
-  inline bool has_o1() const;
-  inline void clear_o1();
-  static const int kO1FieldNumber = 3;
-  inline ::google::protobuf::int32 o1() const;
-  inline void set_o1(::google::protobuf::int32 value);
+  // required string first_name = 1;
+  inline bool has_first_name() const;
+  inline void clear_first_name();
+  static const int kFirstNameFieldNumber = 1;
+  inline const ::std::string& first_name() const;
+  inline void set_first_name(const ::std::string& value);
+  inline void set_first_name(const char* value);
+  inline void set_first_name(const char* value, size_t size);
+  inline ::std::string* mutable_first_name();
+  inline ::std::string* release_first_name();
+  inline void set_allocated_first_name(::std::string* first_name);
 
-  // optional string o2 = 4;
-  inline bool has_o2() const;
-  inline void clear_o2();
-  static const int kO2FieldNumber = 4;
-  inline const ::std::string& o2() const;
-  inline void set_o2(const ::std::string& value);
-  inline void set_o2(const char* value);
-  inline void set_o2(const char* value, size_t size);
-  inline ::std::string* mutable_o2();
-  inline ::std::string* release_o2();
-  inline void set_allocated_o2(::std::string* o2);
+  // required string last_name = 2;
+  inline bool has_last_name() const;
+  inline void clear_last_name();
+  static const int kLastNameFieldNumber = 2;
+  inline const ::std::string& last_name() const;
+  inline void set_last_name(const ::std::string& value);
+  inline void set_last_name(const char* value);
+  inline void set_last_name(const char* value, size_t size);
+  inline ::std::string* mutable_last_name();
+  inline ::std::string* release_last_name();
+  inline void set_allocated_last_name(::std::string* last_name);
 
-  // required float n1 = 1;
-  inline bool has_n1() const;
-  inline void clear_n1();
-  static const int kN1FieldNumber = 1;
-  inline float n1() const;
-  inline void set_n1(float value);
+  // required int32 date_of_birth = 3;
+  inline bool has_date_of_birth() const;
+  inline void clear_date_of_birth();
+  static const int kDateOfBirthFieldNumber = 3;
+  inline ::google::protobuf::int32 date_of_birth() const;
+  inline void set_date_of_birth(::google::protobuf::int32 value);
 
-  // required .N.M n2 = 2;
-  inline bool has_n2() const;
-  inline void clear_n2();
-  static const int kN2FieldNumber = 2;
-  inline const ::N_M& n2() const;
-  inline ::N_M* mutable_n2();
-  inline ::N_M* release_n2();
-  inline void set_allocated_n2(::N_M* n2);
+  // optional .foo.bar.Person.TelNumber tel_number = 4;
+  inline bool has_tel_number() const;
+  inline void clear_tel_number();
+  static const int kTelNumberFieldNumber = 4;
+  inline const ::foo::bar::Person_TelNumber& tel_number() const;
+  inline ::foo::bar::Person_TelNumber* mutable_tel_number();
+  inline ::foo::bar::Person_TelNumber* release_tel_number();
+  inline void set_allocated_tel_number(::foo::bar::Person_TelNumber* tel_number);
 
-  inline OCase O_case() const;
-  // @@protoc_insertion_point(class_scope:N)
+  // optional int32 self_employed = 5;
+  inline bool has_self_employed() const;
+  inline void clear_self_employed();
+  static const int kSelfEmployedFieldNumber = 5;
+  inline ::google::protobuf::int32 self_employed() const;
+  inline void set_self_employed(::google::protobuf::int32 value);
+
+  // optional string employed_by = 6;
+  inline bool has_employed_by() const;
+  inline void clear_employed_by();
+  static const int kEmployedByFieldNumber = 6;
+  inline const ::std::string& employed_by() const;
+  inline void set_employed_by(const ::std::string& value);
+  inline void set_employed_by(const char* value);
+  inline void set_employed_by(const char* value, size_t size);
+  inline ::std::string* mutable_employed_by();
+  inline ::std::string* release_employed_by();
+  inline void set_allocated_employed_by(::std::string* employed_by);
+
+  inline EmploymentCase Employment_case() const;
+  // @@protoc_insertion_point(class_scope:foo.bar.Person)
  private:
-  inline void set_has_o1();
-  inline void set_has_o2();
-  inline void set_has_n1();
-  inline void clear_has_n1();
-  inline void set_has_n2();
-  inline void clear_has_n2();
+  inline void set_has_first_name();
+  inline void clear_has_first_name();
+  inline void set_has_last_name();
+  inline void clear_has_last_name();
+  inline void set_has_date_of_birth();
+  inline void clear_has_date_of_birth();
+  inline void set_has_tel_number();
+  inline void clear_has_tel_number();
+  inline void set_has_self_employed();
+  inline void set_has_employed_by();
 
-  inline bool has_O();
-  void clear_O();
-  inline void clear_has_O();
+  inline bool has_Employment();
+  void clear_Employment();
+  inline void clear_has_Employment();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
-  ::N_M* n2_;
-  float n1_;
-  union OUnion {
-    ::google::protobuf::int32 o1_;
-    ::std::string* o2_;
-  } O_;
+  ::std::string* first_name_;
+  ::std::string* last_name_;
+  ::foo::bar::Person_TelNumber* tel_number_;
+  ::google::protobuf::int32 date_of_birth_;
+  union EmploymentUnion {
+    ::google::protobuf::int32 self_employed_;
+    ::std::string* employed_by_;
+  } Employment_;
   ::google::protobuf::uint32 _oneof_case_[1];
 
   friend void  protobuf_AddDesc_test01_2eproto();
@@ -258,18 +286,18 @@ class N : public ::google::protobuf::Message {
   friend void protobuf_ShutdownFile_test01_2eproto();
 
   void InitAsDefaultInstance();
-  static N* default_instance_;
+  static Person* default_instance_;
 };
 // -------------------------------------------------------------------
 
-class P : public ::google::protobuf::Message {
+class Couple : public ::google::protobuf::Message {
  public:
-  P();
-  virtual ~P();
+  Couple();
+  virtual ~Couple();
 
-  P(const P& from);
+  Couple(const Couple& from);
 
-  inline P& operator=(const P& from) {
+  inline Couple& operator=(const Couple& from) {
     CopyFrom(from);
     return *this;
   }
@@ -283,17 +311,17 @@ class P : public ::google::protobuf::Message {
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const P& default_instance();
+  static const Couple& default_instance();
 
-  void Swap(P* other);
+  void Swap(Couple* other);
 
   // implements Message ----------------------------------------------
 
-  P* New() const;
+  Couple* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const P& from);
-  void MergeFrom(const P& from);
+  void CopyFrom(const Couple& from);
+  void MergeFrom(const Couple& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -315,414 +343,570 @@ class P : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required .N n = 1;
-  inline bool has_n() const;
-  inline void clear_n();
-  static const int kNFieldNumber = 1;
-  inline const ::N& n() const;
-  inline ::N* mutable_n();
-  inline ::N* release_n();
-  inline void set_allocated_n(::N* n);
+  // required .foo.bar.Person p1 = 1;
+  inline bool has_p1() const;
+  inline void clear_p1();
+  static const int kP1FieldNumber = 1;
+  inline const ::foo::bar::Person& p1() const;
+  inline ::foo::bar::Person* mutable_p1();
+  inline ::foo::bar::Person* release_p1();
+  inline void set_allocated_p1(::foo::bar::Person* p1);
 
-  // required .N.M m = 2;
-  inline bool has_m() const;
-  inline void clear_m();
-  static const int kMFieldNumber = 2;
-  inline const ::N_M& m() const;
-  inline ::N_M* mutable_m();
-  inline ::N_M* release_m();
-  inline void set_allocated_m(::N_M* m);
+  // required .foo.bar.Person p2 = 2;
+  inline bool has_p2() const;
+  inline void clear_p2();
+  static const int kP2FieldNumber = 2;
+  inline const ::foo::bar::Person& p2() const;
+  inline ::foo::bar::Person* mutable_p2();
+  inline ::foo::bar::Person* release_p2();
+  inline void set_allocated_p2(::foo::bar::Person* p2);
 
-  // @@protoc_insertion_point(class_scope:P)
+  // optional .foo.bar.Person.TelNumber contact_number = 3;
+  inline bool has_contact_number() const;
+  inline void clear_contact_number();
+  static const int kContactNumberFieldNumber = 3;
+  inline const ::foo::bar::Person_TelNumber& contact_number() const;
+  inline ::foo::bar::Person_TelNumber* mutable_contact_number();
+  inline ::foo::bar::Person_TelNumber* release_contact_number();
+  inline void set_allocated_contact_number(::foo::bar::Person_TelNumber* contact_number);
+
+  // @@protoc_insertion_point(class_scope:foo.bar.Couple)
  private:
-  inline void set_has_n();
-  inline void clear_has_n();
-  inline void set_has_m();
-  inline void clear_has_m();
+  inline void set_has_p1();
+  inline void clear_has_p1();
+  inline void set_has_p2();
+  inline void clear_has_p2();
+  inline void set_has_contact_number();
+  inline void clear_has_contact_number();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
-  ::N* n_;
-  ::N_M* m_;
+  ::foo::bar::Person* p1_;
+  ::foo::bar::Person* p2_;
+  ::foo::bar::Person_TelNumber* contact_number_;
   friend void  protobuf_AddDesc_test01_2eproto();
   friend void protobuf_AssignDesc_test01_2eproto();
   friend void protobuf_ShutdownFile_test01_2eproto();
 
   void InitAsDefaultInstance();
-  static P* default_instance_;
+  static Couple* default_instance_;
 };
 // ===================================================================
 
 
 // ===================================================================
 
-// N_M
+// Person_TelNumber
 
-// required int32 v1 = 1;
-inline bool N_M::has_v1() const {
+// required int32 area_code = 1;
+inline bool Person_TelNumber::has_area_code() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void N_M::set_has_v1() {
+inline void Person_TelNumber::set_has_area_code() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void N_M::clear_has_v1() {
+inline void Person_TelNumber::clear_has_area_code() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void N_M::clear_v1() {
-  v1_ = 0;
-  clear_has_v1();
+inline void Person_TelNumber::clear_area_code() {
+  area_code_ = 0;
+  clear_has_area_code();
 }
-inline ::google::protobuf::int32 N_M::v1() const {
-  // @@protoc_insertion_point(field_get:N.M.v1)
-  return v1_;
+inline ::google::protobuf::int32 Person_TelNumber::area_code() const {
+  // @@protoc_insertion_point(field_get:foo.bar.Person.TelNumber.area_code)
+  return area_code_;
 }
-inline void N_M::set_v1(::google::protobuf::int32 value) {
-  set_has_v1();
-  v1_ = value;
-  // @@protoc_insertion_point(field_set:N.M.v1)
+inline void Person_TelNumber::set_area_code(::google::protobuf::int32 value) {
+  set_has_area_code();
+  area_code_ = value;
+  // @@protoc_insertion_point(field_set:foo.bar.Person.TelNumber.area_code)
 }
 
-// required string v2 = 2;
-inline bool N_M::has_v2() const {
+// required int32 number = 2;
+inline bool Person_TelNumber::has_number() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void N_M::set_has_v2() {
+inline void Person_TelNumber::set_has_number() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void N_M::clear_has_v2() {
+inline void Person_TelNumber::clear_has_number() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void N_M::clear_v2() {
-  if (v2_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    v2_->clear();
-  }
-  clear_has_v2();
+inline void Person_TelNumber::clear_number() {
+  number_ = 0;
+  clear_has_number();
 }
-inline const ::std::string& N_M::v2() const {
-  // @@protoc_insertion_point(field_get:N.M.v2)
-  return *v2_;
+inline ::google::protobuf::int32 Person_TelNumber::number() const {
+  // @@protoc_insertion_point(field_get:foo.bar.Person.TelNumber.number)
+  return number_;
 }
-inline void N_M::set_v2(const ::std::string& value) {
-  set_has_v2();
-  if (v2_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    v2_ = new ::std::string;
-  }
-  v2_->assign(value);
-  // @@protoc_insertion_point(field_set:N.M.v2)
-}
-inline void N_M::set_v2(const char* value) {
-  set_has_v2();
-  if (v2_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    v2_ = new ::std::string;
-  }
-  v2_->assign(value);
-  // @@protoc_insertion_point(field_set_char:N.M.v2)
-}
-inline void N_M::set_v2(const char* value, size_t size) {
-  set_has_v2();
-  if (v2_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    v2_ = new ::std::string;
-  }
-  v2_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:N.M.v2)
-}
-inline ::std::string* N_M::mutable_v2() {
-  set_has_v2();
-  if (v2_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    v2_ = new ::std::string;
-  }
-  // @@protoc_insertion_point(field_mutable:N.M.v2)
-  return v2_;
-}
-inline ::std::string* N_M::release_v2() {
-  clear_has_v2();
-  if (v2_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    return NULL;
-  } else {
-    ::std::string* temp = v2_;
-    v2_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    return temp;
-  }
-}
-inline void N_M::set_allocated_v2(::std::string* v2) {
-  if (v2_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    delete v2_;
-  }
-  if (v2) {
-    set_has_v2();
-    v2_ = v2;
-  } else {
-    clear_has_v2();
-    v2_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_set_allocated:N.M.v2)
+inline void Person_TelNumber::set_number(::google::protobuf::int32 value) {
+  set_has_number();
+  number_ = value;
+  // @@protoc_insertion_point(field_set:foo.bar.Person.TelNumber.number)
 }
 
 // -------------------------------------------------------------------
 
-// N
+// Person
 
-// optional int32 o1 = 3;
-inline bool N::has_o1() const {
-  return O_case() == kO1;
+// required string first_name = 1;
+inline bool Person::has_first_name() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void N::set_has_o1() {
-  _oneof_case_[0] = kO1;
+inline void Person::set_has_first_name() {
+  _has_bits_[0] |= 0x00000001u;
 }
-inline void N::clear_o1() {
-  if (has_o1()) {
-    O_.o1_ = 0;
-    clear_has_O();
+inline void Person::clear_has_first_name() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void Person::clear_first_name() {
+  if (first_name_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    first_name_->clear();
+  }
+  clear_has_first_name();
+}
+inline const ::std::string& Person::first_name() const {
+  // @@protoc_insertion_point(field_get:foo.bar.Person.first_name)
+  return *first_name_;
+}
+inline void Person::set_first_name(const ::std::string& value) {
+  set_has_first_name();
+  if (first_name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    first_name_ = new ::std::string;
+  }
+  first_name_->assign(value);
+  // @@protoc_insertion_point(field_set:foo.bar.Person.first_name)
+}
+inline void Person::set_first_name(const char* value) {
+  set_has_first_name();
+  if (first_name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    first_name_ = new ::std::string;
+  }
+  first_name_->assign(value);
+  // @@protoc_insertion_point(field_set_char:foo.bar.Person.first_name)
+}
+inline void Person::set_first_name(const char* value, size_t size) {
+  set_has_first_name();
+  if (first_name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    first_name_ = new ::std::string;
+  }
+  first_name_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:foo.bar.Person.first_name)
+}
+inline ::std::string* Person::mutable_first_name() {
+  set_has_first_name();
+  if (first_name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    first_name_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:foo.bar.Person.first_name)
+  return first_name_;
+}
+inline ::std::string* Person::release_first_name() {
+  clear_has_first_name();
+  if (first_name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = first_name_;
+    first_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
   }
 }
-inline ::google::protobuf::int32 N::o1() const {
-  if (has_o1()) {
-    return O_.o1_;
+inline void Person::set_allocated_first_name(::std::string* first_name) {
+  if (first_name_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete first_name_;
+  }
+  if (first_name) {
+    set_has_first_name();
+    first_name_ = first_name;
+  } else {
+    clear_has_first_name();
+    first_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:foo.bar.Person.first_name)
+}
+
+// required string last_name = 2;
+inline bool Person::has_last_name() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void Person::set_has_last_name() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void Person::clear_has_last_name() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void Person::clear_last_name() {
+  if (last_name_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    last_name_->clear();
+  }
+  clear_has_last_name();
+}
+inline const ::std::string& Person::last_name() const {
+  // @@protoc_insertion_point(field_get:foo.bar.Person.last_name)
+  return *last_name_;
+}
+inline void Person::set_last_name(const ::std::string& value) {
+  set_has_last_name();
+  if (last_name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    last_name_ = new ::std::string;
+  }
+  last_name_->assign(value);
+  // @@protoc_insertion_point(field_set:foo.bar.Person.last_name)
+}
+inline void Person::set_last_name(const char* value) {
+  set_has_last_name();
+  if (last_name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    last_name_ = new ::std::string;
+  }
+  last_name_->assign(value);
+  // @@protoc_insertion_point(field_set_char:foo.bar.Person.last_name)
+}
+inline void Person::set_last_name(const char* value, size_t size) {
+  set_has_last_name();
+  if (last_name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    last_name_ = new ::std::string;
+  }
+  last_name_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:foo.bar.Person.last_name)
+}
+inline ::std::string* Person::mutable_last_name() {
+  set_has_last_name();
+  if (last_name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    last_name_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:foo.bar.Person.last_name)
+  return last_name_;
+}
+inline ::std::string* Person::release_last_name() {
+  clear_has_last_name();
+  if (last_name_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = last_name_;
+    last_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void Person::set_allocated_last_name(::std::string* last_name) {
+  if (last_name_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete last_name_;
+  }
+  if (last_name) {
+    set_has_last_name();
+    last_name_ = last_name;
+  } else {
+    clear_has_last_name();
+    last_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:foo.bar.Person.last_name)
+}
+
+// required int32 date_of_birth = 3;
+inline bool Person::has_date_of_birth() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void Person::set_has_date_of_birth() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void Person::clear_has_date_of_birth() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void Person::clear_date_of_birth() {
+  date_of_birth_ = 0;
+  clear_has_date_of_birth();
+}
+inline ::google::protobuf::int32 Person::date_of_birth() const {
+  // @@protoc_insertion_point(field_get:foo.bar.Person.date_of_birth)
+  return date_of_birth_;
+}
+inline void Person::set_date_of_birth(::google::protobuf::int32 value) {
+  set_has_date_of_birth();
+  date_of_birth_ = value;
+  // @@protoc_insertion_point(field_set:foo.bar.Person.date_of_birth)
+}
+
+// optional .foo.bar.Person.TelNumber tel_number = 4;
+inline bool Person::has_tel_number() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void Person::set_has_tel_number() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void Person::clear_has_tel_number() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void Person::clear_tel_number() {
+  if (tel_number_ != NULL) tel_number_->::foo::bar::Person_TelNumber::Clear();
+  clear_has_tel_number();
+}
+inline const ::foo::bar::Person_TelNumber& Person::tel_number() const {
+  // @@protoc_insertion_point(field_get:foo.bar.Person.tel_number)
+  return tel_number_ != NULL ? *tel_number_ : *default_instance_->tel_number_;
+}
+inline ::foo::bar::Person_TelNumber* Person::mutable_tel_number() {
+  set_has_tel_number();
+  if (tel_number_ == NULL) tel_number_ = new ::foo::bar::Person_TelNumber;
+  // @@protoc_insertion_point(field_mutable:foo.bar.Person.tel_number)
+  return tel_number_;
+}
+inline ::foo::bar::Person_TelNumber* Person::release_tel_number() {
+  clear_has_tel_number();
+  ::foo::bar::Person_TelNumber* temp = tel_number_;
+  tel_number_ = NULL;
+  return temp;
+}
+inline void Person::set_allocated_tel_number(::foo::bar::Person_TelNumber* tel_number) {
+  delete tel_number_;
+  tel_number_ = tel_number;
+  if (tel_number) {
+    set_has_tel_number();
+  } else {
+    clear_has_tel_number();
+  }
+  // @@protoc_insertion_point(field_set_allocated:foo.bar.Person.tel_number)
+}
+
+// optional int32 self_employed = 5;
+inline bool Person::has_self_employed() const {
+  return Employment_case() == kSelfEmployed;
+}
+inline void Person::set_has_self_employed() {
+  _oneof_case_[0] = kSelfEmployed;
+}
+inline void Person::clear_self_employed() {
+  if (has_self_employed()) {
+    Employment_.self_employed_ = 0;
+    clear_has_Employment();
+  }
+}
+inline ::google::protobuf::int32 Person::self_employed() const {
+  if (has_self_employed()) {
+    return Employment_.self_employed_;
   }
   return 0;
 }
-inline void N::set_o1(::google::protobuf::int32 value) {
-  if (!has_o1()) {
-    clear_O();
-    set_has_o1();
+inline void Person::set_self_employed(::google::protobuf::int32 value) {
+  if (!has_self_employed()) {
+    clear_Employment();
+    set_has_self_employed();
   }
-  O_.o1_ = value;
+  Employment_.self_employed_ = value;
 }
 
-// optional string o2 = 4;
-inline bool N::has_o2() const {
-  return O_case() == kO2;
+// optional string employed_by = 6;
+inline bool Person::has_employed_by() const {
+  return Employment_case() == kEmployedBy;
 }
-inline void N::set_has_o2() {
-  _oneof_case_[0] = kO2;
+inline void Person::set_has_employed_by() {
+  _oneof_case_[0] = kEmployedBy;
 }
-inline void N::clear_o2() {
-  if (has_o2()) {
-    delete O_.o2_;
-    clear_has_O();
+inline void Person::clear_employed_by() {
+  if (has_employed_by()) {
+    delete Employment_.employed_by_;
+    clear_has_Employment();
   }
 }
-inline const ::std::string& N::o2() const {
-  if (has_o2()) {
-    return *O_.o2_;
+inline const ::std::string& Person::employed_by() const {
+  if (has_employed_by()) {
+    return *Employment_.employed_by_;
   }
   return ::google::protobuf::internal::GetEmptyStringAlreadyInited();
 }
-inline void N::set_o2(const ::std::string& value) {
-  if (!has_o2()) {
-    clear_O();
-    set_has_o2();
-    O_.o2_ = new ::std::string;
+inline void Person::set_employed_by(const ::std::string& value) {
+  if (!has_employed_by()) {
+    clear_Employment();
+    set_has_employed_by();
+    Employment_.employed_by_ = new ::std::string;
   }
-  O_.o2_->assign(value);
+  Employment_.employed_by_->assign(value);
 }
-inline void N::set_o2(const char* value) {
-  if (!has_o2()) {
-    clear_O();
-    set_has_o2();
-    O_.o2_ = new ::std::string;
+inline void Person::set_employed_by(const char* value) {
+  if (!has_employed_by()) {
+    clear_Employment();
+    set_has_employed_by();
+    Employment_.employed_by_ = new ::std::string;
   }
-  O_.o2_->assign(value);
+  Employment_.employed_by_->assign(value);
 }
-inline void N::set_o2(const char* value, size_t size) {
-  if (!has_o2()) {
-    clear_O();
-    set_has_o2();
-    O_.o2_ = new ::std::string;
+inline void Person::set_employed_by(const char* value, size_t size) {
+  if (!has_employed_by()) {
+    clear_Employment();
+    set_has_employed_by();
+    Employment_.employed_by_ = new ::std::string;
   }
-  O_.o2_->assign(
+  Employment_.employed_by_->assign(
       reinterpret_cast<const char*>(value), size);
 }
-inline ::std::string* N::mutable_o2() {
-  if (!has_o2()) {
-    clear_O();
-    set_has_o2();
-    O_.o2_ = new ::std::string;
+inline ::std::string* Person::mutable_employed_by() {
+  if (!has_employed_by()) {
+    clear_Employment();
+    set_has_employed_by();
+    Employment_.employed_by_ = new ::std::string;
   }
-  return O_.o2_;
+  return Employment_.employed_by_;
 }
-inline ::std::string* N::release_o2() {
-  if (has_o2()) {
-    clear_has_O();
-    ::std::string* temp = O_.o2_;
-    O_.o2_ = NULL;
+inline ::std::string* Person::release_employed_by() {
+  if (has_employed_by()) {
+    clear_has_Employment();
+    ::std::string* temp = Employment_.employed_by_;
+    Employment_.employed_by_ = NULL;
     return temp;
   } else {
     return NULL;
   }
 }
-inline void N::set_allocated_o2(::std::string* o2) {
-  clear_O();
-  if (o2) {
-    set_has_o2();
-    O_.o2_ = o2;
+inline void Person::set_allocated_employed_by(::std::string* employed_by) {
+  clear_Employment();
+  if (employed_by) {
+    set_has_employed_by();
+    Employment_.employed_by_ = employed_by;
   }
 }
 
-// required float n1 = 1;
-inline bool N::has_n1() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
+inline bool Person::has_Employment() {
+  return Employment_case() != EMPLOYMENT_NOT_SET;
 }
-inline void N::set_has_n1() {
-  _has_bits_[0] |= 0x00000004u;
+inline void Person::clear_has_Employment() {
+  _oneof_case_[0] = EMPLOYMENT_NOT_SET;
 }
-inline void N::clear_has_n1() {
-  _has_bits_[0] &= ~0x00000004u;
-}
-inline void N::clear_n1() {
-  n1_ = 0;
-  clear_has_n1();
-}
-inline float N::n1() const {
-  // @@protoc_insertion_point(field_get:N.n1)
-  return n1_;
-}
-inline void N::set_n1(float value) {
-  set_has_n1();
-  n1_ = value;
-  // @@protoc_insertion_point(field_set:N.n1)
-}
-
-// required .N.M n2 = 2;
-inline bool N::has_n2() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
-}
-inline void N::set_has_n2() {
-  _has_bits_[0] |= 0x00000008u;
-}
-inline void N::clear_has_n2() {
-  _has_bits_[0] &= ~0x00000008u;
-}
-inline void N::clear_n2() {
-  if (n2_ != NULL) n2_->::N_M::Clear();
-  clear_has_n2();
-}
-inline const ::N_M& N::n2() const {
-  // @@protoc_insertion_point(field_get:N.n2)
-  return n2_ != NULL ? *n2_ : *default_instance_->n2_;
-}
-inline ::N_M* N::mutable_n2() {
-  set_has_n2();
-  if (n2_ == NULL) n2_ = new ::N_M;
-  // @@protoc_insertion_point(field_mutable:N.n2)
-  return n2_;
-}
-inline ::N_M* N::release_n2() {
-  clear_has_n2();
-  ::N_M* temp = n2_;
-  n2_ = NULL;
-  return temp;
-}
-inline void N::set_allocated_n2(::N_M* n2) {
-  delete n2_;
-  n2_ = n2;
-  if (n2) {
-    set_has_n2();
-  } else {
-    clear_has_n2();
-  }
-  // @@protoc_insertion_point(field_set_allocated:N.n2)
-}
-
-inline bool N::has_O() {
-  return O_case() != O_NOT_SET;
-}
-inline void N::clear_has_O() {
-  _oneof_case_[0] = O_NOT_SET;
-}
-inline N::OCase N::O_case() const {
-  return N::OCase(_oneof_case_[0]);
+inline Person::EmploymentCase Person::Employment_case() const {
+  return Person::EmploymentCase(_oneof_case_[0]);
 }
 // -------------------------------------------------------------------
 
-// P
+// Couple
 
-// required .N n = 1;
-inline bool P::has_n() const {
+// required .foo.bar.Person p1 = 1;
+inline bool Couple::has_p1() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void P::set_has_n() {
+inline void Couple::set_has_p1() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void P::clear_has_n() {
+inline void Couple::clear_has_p1() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void P::clear_n() {
-  if (n_ != NULL) n_->::N::Clear();
-  clear_has_n();
+inline void Couple::clear_p1() {
+  if (p1_ != NULL) p1_->::foo::bar::Person::Clear();
+  clear_has_p1();
 }
-inline const ::N& P::n() const {
-  // @@protoc_insertion_point(field_get:P.n)
-  return n_ != NULL ? *n_ : *default_instance_->n_;
+inline const ::foo::bar::Person& Couple::p1() const {
+  // @@protoc_insertion_point(field_get:foo.bar.Couple.p1)
+  return p1_ != NULL ? *p1_ : *default_instance_->p1_;
 }
-inline ::N* P::mutable_n() {
-  set_has_n();
-  if (n_ == NULL) n_ = new ::N;
-  // @@protoc_insertion_point(field_mutable:P.n)
-  return n_;
+inline ::foo::bar::Person* Couple::mutable_p1() {
+  set_has_p1();
+  if (p1_ == NULL) p1_ = new ::foo::bar::Person;
+  // @@protoc_insertion_point(field_mutable:foo.bar.Couple.p1)
+  return p1_;
 }
-inline ::N* P::release_n() {
-  clear_has_n();
-  ::N* temp = n_;
-  n_ = NULL;
+inline ::foo::bar::Person* Couple::release_p1() {
+  clear_has_p1();
+  ::foo::bar::Person* temp = p1_;
+  p1_ = NULL;
   return temp;
 }
-inline void P::set_allocated_n(::N* n) {
-  delete n_;
-  n_ = n;
-  if (n) {
-    set_has_n();
+inline void Couple::set_allocated_p1(::foo::bar::Person* p1) {
+  delete p1_;
+  p1_ = p1;
+  if (p1) {
+    set_has_p1();
   } else {
-    clear_has_n();
+    clear_has_p1();
   }
-  // @@protoc_insertion_point(field_set_allocated:P.n)
+  // @@protoc_insertion_point(field_set_allocated:foo.bar.Couple.p1)
 }
 
-// required .N.M m = 2;
-inline bool P::has_m() const {
+// required .foo.bar.Person p2 = 2;
+inline bool Couple::has_p2() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void P::set_has_m() {
+inline void Couple::set_has_p2() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void P::clear_has_m() {
+inline void Couple::clear_has_p2() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void P::clear_m() {
-  if (m_ != NULL) m_->::N_M::Clear();
-  clear_has_m();
+inline void Couple::clear_p2() {
+  if (p2_ != NULL) p2_->::foo::bar::Person::Clear();
+  clear_has_p2();
 }
-inline const ::N_M& P::m() const {
-  // @@protoc_insertion_point(field_get:P.m)
-  return m_ != NULL ? *m_ : *default_instance_->m_;
+inline const ::foo::bar::Person& Couple::p2() const {
+  // @@protoc_insertion_point(field_get:foo.bar.Couple.p2)
+  return p2_ != NULL ? *p2_ : *default_instance_->p2_;
 }
-inline ::N_M* P::mutable_m() {
-  set_has_m();
-  if (m_ == NULL) m_ = new ::N_M;
-  // @@protoc_insertion_point(field_mutable:P.m)
-  return m_;
+inline ::foo::bar::Person* Couple::mutable_p2() {
+  set_has_p2();
+  if (p2_ == NULL) p2_ = new ::foo::bar::Person;
+  // @@protoc_insertion_point(field_mutable:foo.bar.Couple.p2)
+  return p2_;
 }
-inline ::N_M* P::release_m() {
-  clear_has_m();
-  ::N_M* temp = m_;
-  m_ = NULL;
+inline ::foo::bar::Person* Couple::release_p2() {
+  clear_has_p2();
+  ::foo::bar::Person* temp = p2_;
+  p2_ = NULL;
   return temp;
 }
-inline void P::set_allocated_m(::N_M* m) {
-  delete m_;
-  m_ = m;
-  if (m) {
-    set_has_m();
+inline void Couple::set_allocated_p2(::foo::bar::Person* p2) {
+  delete p2_;
+  p2_ = p2;
+  if (p2) {
+    set_has_p2();
   } else {
-    clear_has_m();
+    clear_has_p2();
   }
-  // @@protoc_insertion_point(field_set_allocated:P.m)
+  // @@protoc_insertion_point(field_set_allocated:foo.bar.Couple.p2)
+}
+
+// optional .foo.bar.Person.TelNumber contact_number = 3;
+inline bool Couple::has_contact_number() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void Couple::set_has_contact_number() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void Couple::clear_has_contact_number() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void Couple::clear_contact_number() {
+  if (contact_number_ != NULL) contact_number_->::foo::bar::Person_TelNumber::Clear();
+  clear_has_contact_number();
+}
+inline const ::foo::bar::Person_TelNumber& Couple::contact_number() const {
+  // @@protoc_insertion_point(field_get:foo.bar.Couple.contact_number)
+  return contact_number_ != NULL ? *contact_number_ : *default_instance_->contact_number_;
+}
+inline ::foo::bar::Person_TelNumber* Couple::mutable_contact_number() {
+  set_has_contact_number();
+  if (contact_number_ == NULL) contact_number_ = new ::foo::bar::Person_TelNumber;
+  // @@protoc_insertion_point(field_mutable:foo.bar.Couple.contact_number)
+  return contact_number_;
+}
+inline ::foo::bar::Person_TelNumber* Couple::release_contact_number() {
+  clear_has_contact_number();
+  ::foo::bar::Person_TelNumber* temp = contact_number_;
+  contact_number_ = NULL;
+  return temp;
+}
+inline void Couple::set_allocated_contact_number(::foo::bar::Person_TelNumber* contact_number) {
+  delete contact_number_;
+  contact_number_ = contact_number;
+  if (contact_number) {
+    set_has_contact_number();
+  } else {
+    clear_has_contact_number();
+  }
+  // @@protoc_insertion_point(field_set_allocated:foo.bar.Couple.contact_number)
 }
 
 
 // @@protoc_insertion_point(namespace_scope)
+
+}  // namespace bar
+}  // namespace foo
 
 #ifndef SWIG
 namespace google {

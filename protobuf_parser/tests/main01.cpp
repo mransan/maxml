@@ -3,26 +3,33 @@
 #include <iostream>
 #include <fstream>
 
-// using namespace blah::foo; 
+using namespace foo::bar; 
 
 int main() {
 
-    N_M m; 
-    m.set_v1(123);
-    m.set_v2("I am a test string");
+    Couple cp; 
+    {
+        Person& p = *cp.mutable_p1();
+        p.set_first_name("John");
+        p.set_last_name("Doe"); 
+        p.set_date_of_birth(19820429);
+        p.set_employed_by("Google");
+    }
+    {
+        Person& p = *cp.mutable_p2();
+        p.set_first_name("Marie");
+        p.set_last_name("Dupont"); 
+        p.set_date_of_birth(19820306);
+        p.set_employed_by("INRIA");
+        
+        Person_TelNumber& t = *p.mutable_tel_number();
+        t.set_area_code(917);
+        t.set_number(1111111);
+    }
 
-    N n; 
-    n.set_n1(1.2);
-    *(n.mutable_n2()) = m;
-    n.set_o1(123);
-    n.set_o2("i am o2");
-
-    P p;
-    *(p.mutable_n()) = n;
-    *(p.mutable_m()) = m; 
 
     std::ofstream out("test01.data");
-    p.SerializeToOstream(&out);
+    cp.SerializeToOstream(&out);
     if(! out.good()) {
         std::cerr << "Error writing message to file"
                   << std::endl;
