@@ -1,49 +1,6 @@
 
-type error = 
-  | Unresolved_type of {
-    field_name: string; 
-    type_:string; 
-    message_name:string 
-  }
-  | Duplicated_field_number of {
-    field_name: string; 
-    previous_field_name  : string;
-    message_name: string; 
-  }
-  | Invalid_default_value of {
-    field_name: string; 
-    info: string; 
-  }
-
-exception Compilation_error of error  
   
-let () =
-  Printexc.register_printer (fun exn ->
-    match exn with
-    | Compilation_error (Unresolved_type { field_name; _ }) -> 
-        Some (Printf.sprintf "unresolved type for field : %s" field_name)
-    | Compilation_error (Duplicated_field_number _ ) -> 
-        Some "duplicated field number"
-    | Compilation_error (Invalid_default_value _ ) -> 
-        Some "invalid default value"
-    | _         -> None)
-
-let unresolved_type field_name type_ message_name = 
-  raise (Compilation_error (Unresolved_type {
-    field_name; 
-    type_; 
-    message_name
-  }))
-
-let duplicated_field_number field_name previous_field_name message_name  = 
-  raise (Compilation_error (Duplicated_field_number {
-    field_name; 
-    previous_field_name; 
-    message_name;
-  }))
-
-let invalid_default_value field_name info = 
-  raise (Compilation_error (Invalid_default_value {field_name; info} ))
+module E = Exception 
 
 let field_name {Astc.field_parsed; _ } = 
   let {Ast.field_name; _ } = field_parsed in 
@@ -84,12 +41,12 @@ let string_of_message_scope {Astc.namespaces; Astc.message_names}  =
     (string_of_string_list namespaces)
     (string_of_string_list message_names) 
 
-let string_of_message {Astc.id; Astc.message_scope; Astc.message_name; Astc.body_content} = 
+let string_of_message {Astc.id; Astc.message_scope; Astc.message_name; Astc.message_body} = 
   Printf.sprintf "message: {id:%i, message_scope:%s, name:%s, field nb:%i}" 
     id 
     (string_of_message_scope message_scope) 
     message_name
-    (List.length body_content)
+    (List.length message_body)
 
 let scope_of_package = function
   | Some s -> {empty_scope with 
@@ -99,7 +56,7 @@ let scope_of_package = function
 
 let unresolved_of_string s = 
   match rev_split_by_char '.' s with 
-  | [] -> failwith "Programmatic error"
+  | [] -> raise @@ E.programmatic_error E.Invalid_string_split
   | hd :: tl -> {
     Astc.scope = (List.rev tl); 
     Astc.type_name = hd;
@@ -140,14 +97,16 @@ let map_field_type : 'a Astc.field_type  -> 'b Astc.field_type = function
  | Astc.Field_type_bool       -> Astc.Field_type_bool 
  | Astc.Field_type_string     -> Astc.Field_type_string 
  | Astc.Field_type_bytes      -> Astc.Field_type_bytes 
- | _ -> failwith "Programmatic error"
+ | _ -> raise @@ E.programmatic_error E.Unexpect_field_type 
 
 let compile_default field_name constant = function  
   | Astc.Field_type_double 
   | Astc.Field_type_float -> (
     match constant with 
     | Ast.Constant_int i -> Ast.Constant_float (float_of_int i)
-    | _ -> invalid_default_value field_name "invalid default type (float/int expected)"
+    | _ -> 
+      raise @@ E.invalid_default_value 
+        ~field_name ~info:"invalid default type (float/int expected)" ()
   )
   | Astc.Field_type_int32 
   | Astc.Field_type_int64 
@@ -159,30 +118,36 @@ let compile_default field_name constant = function
   | Astc.Field_type_sfixed64 -> (
     match constant with 
     | Ast.Constant_int _ -> constant  
-    | _ -> invalid_default_value field_name "invalid default type (int expected)"
+    | _ -> 
+      raise @@ E.invalid_default_value 
+        ~field_name ~info:"invalid default type (int expected)" ()
   )
   | Astc.Field_type_uint32 
   | Astc.Field_type_uint64 -> (
     match constant with 
     | Ast.Constant_int i -> if i >=0 
       then constant 
-      else invalid_default_value field_name "negative default value for unsigned int"
-    | _ -> invalid_default_value field_name "invalid default type (int expected)"
+      else raise @@ E.invalid_default_value 
+        ~field_name ~info:"negative default value for unsigned int" () 
+    | _ -> raise @@ E.invalid_default_value
+        ~field_name ~info:"invalid default type (int expected)" ()
   )
   | Astc.Field_type_bool -> (
     match constant with 
     | Ast.Constant_bool _ -> constant
-    | _ -> invalid_default_value field_name "invalid default type (bool expected)"
+    | _ -> raise @@ E.invalid_default_value 
+      ~field_name ~info:"invalid default type (bool expected)" ()
   ) 
   | Astc.Field_type_string -> (
    match constant with 
    | Ast.Constant_string _ -> constant
-    | _ -> invalid_default_value field_name "invalid default type (string expected)"
+    | _ -> raise @@ E.invalid_default_value 
+      ~field_name ~info:"invalid default type (string expected)" ()
   ) 
-  | Astc.Field_type_bytes -> 
-    invalid_default_value field_name "default value not supported for bytes"
-  | Astc.Field_type_message _ -> 
-    invalid_default_value field_name "default value not supported for message"
+  | Astc.Field_type_bytes -> raise @@ E.invalid_default_value 
+    ~field_name ~info:"default value not supported for bytes" ()
+  | Astc.Field_type_message _ -> raise @@ E.invalid_default_value 
+    ~field_name ~info:"default value not supported for message" ()
 
 let get_default field_name field_options field_type = 
   match List.assoc "default" field_options with
@@ -224,7 +189,7 @@ let rec list_assoc2 x = function
 let rec compile_message_p1 message_scope ({
   Ast.id;
   Ast.message_name; 
-  Ast.body_content; 
+  Ast.message_body; 
 })  = 
   
   let {Astc.message_names; _ } = message_scope in  
@@ -232,19 +197,19 @@ let rec compile_message_p1 message_scope ({
     Astc.message_names = message_names @ [ message_name] 
   } in 
   
-  let body_content, all_sub = List.fold_left (fun (body_content, all_messages) -> function  
+  let message_body, all_sub = List.fold_left (fun (message_body, all_messages) -> function  
     | Ast.Message_field f -> 
         let sub = Astc.Message_field (compile_field_p1 f) in 
-        (sub :: body_content, all_messages)
+        (sub :: message_body, all_messages)
     | Ast.Message_oneof_field o -> 
         let sub = Astc.Message_oneof_field (compile_oneof_p1 o) in 
-        (sub :: body_content, all_messages)
+        (sub :: message_body, all_messages)
     | Ast.Message_sub m -> 
         let all_sub = compile_message_p1 sub_scope m in 
-        (body_content,  all_messages @ all_sub)
-  ) ([], []) body_content in
+        (message_body,  all_messages @ all_sub)
+  ) ([], []) message_body in
   
-  let body_content = List.rev body_content in 
+  let message_body = List.rev message_body in 
   
   (* Both field name and field number must be unique 
      within a message scope. This includes the field in a 
@@ -262,19 +227,20 @@ let rec compile_message_p1 message_scope ({
     then 
       (number, name)::number_index
     else 
-      duplicated_field_number name "" message_name
+      raise @@ E.duplicated_field_number 
+        ~field_name:name ~previous_field_name:"" ~message_name ()
   in
   ignore @@ List.fold_left (fun number_index -> function 
     | Astc.Message_field f -> validate_duplicate number_index f
     | Astc.Message_oneof_field {Astc.oneof_fields; _ } ->
        List.fold_left validate_duplicate number_index oneof_fields
-  ) [] body_content ;  
+  ) [] message_body ;  
 
   all_sub @ [ {
     Astc.id; 
     Astc.message_scope;
     Astc.message_name; 
-    Astc.body_content;
+    Astc.message_body;
   }] 
 
 let find_all_message_in_field_scope messages scope = 
@@ -286,7 +252,7 @@ let find_all_message_in_field_scope messages scope =
 let compile_message_p2 messages ({
   Astc.message_name; 
   Astc.message_scope = {Astc.namespaces ; Astc.message_names; }; 
-  Astc.body_content} as message)  = 
+  Astc.message_body} as message)  = 
 
   (* stringify the message scope so that it can 
      be used with the field scope. 
@@ -351,22 +317,23 @@ let compile_message_p2 messages ({
       
       match id with 
       | Some id -> (Astc.Field_type_message id:Astc.resolved Astc.field_type) 
-      | None    -> unresolved_type field_name type_name message_name 
+      | None    -> 
+        raise @@ E.unresolved_type ~field_name ~type_:type_name ~message_name () 
     )
     | field_type -> map_field_type field_type
   in
 
-  let body_content = List.fold_left (fun body_content  -> function
+  let message_body = List.fold_left (fun message_body  -> function
     | Astc.Message_field field ->
       let field_type = process_field_type message_name field in 
-      Astc.Message_field {field with Astc.field_type} :: body_content
+      Astc.Message_field {field with Astc.field_type} :: message_body
     | Astc.Message_oneof_field ({Astc.oneof_fields; _ } as oneof )  -> 
       let oneof_fields = List.fold_left (fun oneof_fields field -> 
         let field_type = process_field_type message_name field in  
         {field with Astc.field_type }:: oneof_fields 
       ) [] oneof_fields in  
       let oneof_fields = List.rev oneof_fields in 
-      Astc.Message_oneof_field {oneof with Astc.oneof_fields } :: body_content 
-  ) [] body_content in 
-  let body_content = List.rev body_content in 
-  {message with Astc.body_content; }
+      Astc.Message_oneof_field {oneof with Astc.oneof_fields } :: message_body 
+  ) [] message_body in 
+  let message_body = List.rev message_body in 
+  {message with Astc.message_body; }

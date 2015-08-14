@@ -1,3 +1,8 @@
+(** This module defines convenient function to create and manipulate
+    the types define in the Ast module.
+  *)
+
+(** {2 Creators } *) 
 
 val field : 
   ?options:Ast.field_options ->
@@ -37,6 +42,8 @@ val message :
   Ast.message
 
 val proto : ?package:string -> Ast.message list -> Ast.proto
+
+(** {2 Miscellaneous functionality } *)
 
 val message_printer :?level:int -> Ast.message -> unit 
 

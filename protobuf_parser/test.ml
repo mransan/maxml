@@ -164,10 +164,10 @@ let () =
     *)
     let {
       Ast.message_name; 
-      Ast.body_content;
+      Ast.message_body;
     } = parse Parser.message_ s in 
     assert (message_name  = "Outer");
-    assert (List.length body_content = 4);
+    assert (List.length message_body= 4);
     ()
   in
   let () = 
@@ -183,15 +183,15 @@ let () =
     let {
       Astc.message_scope; 
       Astc.message_name;
-      Astc.body_content; 
+      Astc.message_body; 
     } = List.hd all_messages in 
     assert (Astc_util.empty_scope = message_scope);
     assert ("Test" = message_name); 
-    assert (2 = List.length body_content); 
+    assert (2 = List.length message_body); 
     
 
-    let test_fields body_content = 
-      let f1 = List.nth body_content 0 in 
+    let test_fields message_body = 
+      let f1 = List.nth message_body 0 in 
       let f1 = match f1 with 
         | Astc.Message_field f -> f
         | _ -> assert(false)
@@ -201,7 +201,7 @@ let () =
       assert (Astc_util.field_number f1 = 1); 
       assert (None = f1.Astc.field_default); 
       
-      let f2 = List.nth body_content 1 in 
+      let f2 = List.nth message_body 1 in 
       let f2 = match f2 with 
         | Astc.Message_field f -> f
         | _ -> assert(false)
@@ -212,7 +212,7 @@ let () =
       assert (None = f2.Astc.field_default); 
       ()
     in 
-    test_fields body_content; 
+    test_fields message_body; 
     let s = "
     message Test {
       message Inner {
@@ -227,12 +227,12 @@ let () =
     let {
       Astc.message_scope; 
       Astc.message_name;
-      Astc.body_content; 
+      Astc.message_body; 
     } = List.hd all_messages in 
     assert (1 = List.length message_scope.Astc.message_names);
     assert ("Inner" = message_name); 
-    assert (2 = List.length body_content); 
-    test_fields body_content; 
+    assert (2 = List.length message_body); 
+    test_fields message_body; 
     let expected_scope = {
       Astc.namespaces = []; 
       Astc.message_names = [ "Test" ] 
@@ -241,11 +241,11 @@ let () =
     let {
       Astc.message_scope; 
       Astc.message_name;
-      Astc.body_content; 
+      Astc.message_body; 
     } = List.nth all_messages 1 in 
     assert (Astc_util.empty_scope = message_scope);
     assert ("Test" = message_name); 
-    assert (0 = List.length body_content); 
+    assert (0 = List.length message_body); 
     ()
   in
   let () = 
@@ -260,12 +260,12 @@ let () =
     let {
       Astc.message_scope; 
       Astc.message_name;
-      Astc.body_content; 
+      Astc.message_body; 
     } = List.hd all_messages in 
     assert (Astc_util.empty_scope  = message_scope);
     assert ("Test" = message_name); 
-    assert (1 = List.length body_content); 
-    let f1 = List.nth body_content 0 in 
+    assert (1 = List.length message_body); 
+    let f1 = List.nth message_body 0 in 
     let f1 = match f1 with | Astc.Message_field f -> f | _ -> assert(false) in 
     assert ("mval" = Astc_util.field_name f1); 
     assert (1 = Astc_util.field_number f1); 
@@ -340,7 +340,7 @@ let () =
 
   let assert_unresolved f = 
     match ignore @@ f () with 
-    | exception (Astc_util.Compilation_error (Astc_util.Unresolved_type _) )-> () 
+    | exception (Exception.Compilation_error (Exception.Unresolved_type _) )-> () 
     | _ -> assert(false)
   in
 
@@ -393,7 +393,7 @@ let () =
 
   let assert_duplicate f = 
     match ignore @@ f () with 
-    | exception (Astc_util.Compilation_error (Astc_util.Duplicated_field_number _) )-> () 
+    | exception (Exception.Compilation_error (Exception.Duplicated_field_number _) )-> () 
     | _ -> assert(false)
   in
 
