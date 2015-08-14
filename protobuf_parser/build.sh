@@ -13,10 +13,12 @@ str.cmxa
 ast.cmx 
 ast_util.cmx 
 astc.cmx 
+exception.cmx
 astc_util.cmx 
 parser.cmx 
 lexer.cmx 
 protobuf_codec.cmxa 
+encoding_util.cmx
 backend_ocaml_static.cmx
 backend_ocaml.cmx
 "
@@ -25,6 +27,8 @@ $OCAMLYACC parser.mly
 $OCAMLLEX  lexer.mll
 $OCAMLOPT -c ast.ml
 $OCAMLOPT -c astc.ml
+$OCAMLOPT -c exception.mli
+$OCAMLOPT -c exception.ml
 $OCAMLOPT -c ast_util.mli
 $OCAMLOPT -c ast_util.ml
 $OCAMLOPT -c astc_util.mli
@@ -32,6 +36,7 @@ $OCAMLOPT -c astc_util.ml
 $OCAMLOPT -c parser.mli
 $OCAMLOPT -c lexer.ml
 $OCAMLOPT -c parser.ml
+$OCAMLOPT -I $PBC_INC -c encoding_util.ml 
 $OCAMLOPT -I $PBC_INC -c backend_ocaml_static.ml 
 $OCAMLOPT -I $PBC_INC -c backend_ocaml.ml 
 $OCAMLOPT -I $PBC_INC -c main.ml 

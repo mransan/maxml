@@ -27,11 +27,11 @@ let message_body_sub message  =  Ast.Message_sub message
 let message_counter = ref 0
 
 let message ~content name = 
-  message_counter := !message_counter + 1; 
+  incr message_counter;
   {
     Ast.id = !message_counter;
     Ast.message_name = name; 
-    body_content = content;
+    message_body = content;
   } 
 
 let proto ?package messages = {
@@ -41,7 +41,7 @@ let proto ?package messages = {
 
 let rec message_printer ?level:(level = 0) {
   Ast.message_name; 
-  Ast.body_content; } = 
+  Ast.message_body; } = 
 
   let prefix () = 
     for i=0 to level  - 1 do 
@@ -55,4 +55,4 @@ let rec message_printer ?level:(level = 0) {
     | Ast.Message_oneof_field {Ast.oneof_name ; _ } ->
         prefix (); Printf.printf "- one of field [%s]\n" oneof_name
     | Ast.Message_sub m -> message_printer ~level:(level + 2) m
-  ) body_content 
+  ) message_body 

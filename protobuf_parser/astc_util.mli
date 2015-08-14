@@ -21,27 +21,6 @@ val empty_scope : Astc.message_scope
 
 val scope_of_package : string option -> Astc.message_scope 
 
-(** {2 Compilation errors } *)
-
-type error = 
-  | Unresolved_type of {
-    field_name: string; 
-    type_:string; 
-    message_name:string 
-  } (** When the type of a field could not be resolved *) 
-  | Duplicated_field_number of {
-    field_name: string; 
-    previous_field_name  : string;
-    message_name: string; 
-  } (** When there are 2 field with either identical number or name *)
-  | Invalid_default_value of {
-    field_name: string; 
-    info: string; 
-  } (** When a default value type type does not match the field type *)
-
-exception Compilation_error of error  
-(** Exception raised when a compilation error occurs *)
-
 (** {2 Compilation routines} *) 
 
 (** Compilation is done in 2 phases. 

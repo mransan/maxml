@@ -1,11 +1,7 @@
 
 module Pc = Protobuf_codec
+module E  = Exception 
 
-let string_of_payload_kind = function 
-  | Pc.Varint -> "varint"
-  | Pc.Bits32 -> "bits32"
-  | Pc.Bits64 -> "bits64"
-  | Pc.Bytes  -> "bytes"
 
 type field_type = 
   | String 
@@ -130,25 +126,26 @@ let compile_field ?as_constructor ?is_option message_scope all_messages field =
       should be outside of Ocaml_backend module 
       since it is general to ALL language. 
    *)
-  let field_type, payload_kind = match encoding_type with
-    | Astc.Field_type_double  -> Float, Pc.Bits64
-    | Astc.Field_type_float  ->  Float, Pc.Bits32 
-    | Astc.Field_type_int32  ->  Int, Pc.Varint
-    | Astc.Field_type_int64  ->  Int, Pc.Varint
-    | Astc.Field_type_uint32  -> Int, Pc.Varint 
-    | Astc.Field_type_uint64 -> Int, Pc.Varint
-    | Astc.Field_type_sint32  -> Int, Pc.Varint
-    | Astc.Field_type_sint64  -> Int, Pc.Varint
-    | Astc.Field_type_fixed32  -> Int, Pc.Bits32
-    | Astc.Field_type_fixed64  -> Int, Pc.Bits64
-    | Astc.Field_type_sfixed32  -> Int, Pc.Bits32
-    | Astc.Field_type_sfixed64 -> Int, Pc.Bits64
-    | Astc.Field_type_bool  -> Bool, Pc.Varint 
-    | Astc.Field_type_string  -> String, Pc.Bytes
-    | Astc.Field_type_bytes  -> Bytes, Pc.Bytes
+  let payload_kind = Encoding_util.payload_kind_of_field_type encoding_type in 
+  let field_type   = match encoding_type with
+    | Astc.Field_type_double  -> Float
+    | Astc.Field_type_float  ->  Float
+    | Astc.Field_type_int32  ->  Int
+    | Astc.Field_type_int64  ->  Int
+    | Astc.Field_type_uint32  -> Int
+    | Astc.Field_type_uint64 -> Int
+    | Astc.Field_type_sint32  -> Int
+    | Astc.Field_type_sint64  -> Int
+    | Astc.Field_type_fixed32  -> Int
+    | Astc.Field_type_fixed64  -> Int
+    | Astc.Field_type_sfixed32  -> Int
+    | Astc.Field_type_sfixed64 -> Int
+    | Astc.Field_type_bool  -> Bool
+    | Astc.Field_type_string  -> String
+    | Astc.Field_type_bytes  -> Bytes
     | Astc.Field_type_message i -> User_defined ( 
       get_type_name_from_all_messages message_scope all_messages i
-    ), Pc.Bytes
+    )
   in 
   {
     field_type; 
@@ -169,7 +166,7 @@ let compile_oneof all_messages message_scope outer_message_name {Astc.oneof_name
       *)
     compile_field ~as_constructor:() message_scope all_messages field 
   ) oneof_fields in 
-  { variant_name; constructors; }
+  {variant_name; constructors; }
 
 let compile 
   (all_messages: Astc.resolved Astc.message list) 
@@ -179,7 +176,7 @@ let compile
   let {
     Astc.message_scope;
     Astc.message_name; 
-    Astc.body_content; 
+    Astc.message_body; 
   } = message in 
 
   let {Astc.message_names; Astc.namespaces = _ } = message_scope in 
@@ -203,7 +200,7 @@ let compile
       } in 
       ((Variant variant)::variants, field::fields) 
     )
-  ) ([], []) body_content in 
+  ) ([], []) message_body in 
 
   List.rev (Record {
     record_name; 
@@ -243,7 +240,7 @@ module Codegen = struct
              let field_type = string_of_field_type false field_type in 
              P.sprintf "(fun d -> `%s (decode_%s_as_%s d))" 
                (constructor_name field_type)
-               (string_of_payload_kind payload_kind)
+               (Encoding_util.string_of_payload_kind payload_kind)
                field_type 
         in 
         s ^ P.sprintf "\n  (%i, %s);" field_number decoding 
@@ -253,19 +250,20 @@ module Codegen = struct
           match encoding_type with
           | Regular_field {field_number; payload_kind } -> (
             let decoding  =  match field_type with 
-            | User_defined t -> 
-               P.sprintf "(fun d -> `%s (%s (decode_sub decode_%s d)))" (constructor_name variant_name) field_name t  
-            | _ -> 
-               let field_type = string_of_field_type false field_type in 
-               P.sprintf "(fun d -> `%s (%s (decode_%s_as_%s d)))" 
-                 (constructor_name variant_name)
-                 field_name
-                 (string_of_payload_kind payload_kind)
-                 field_type 
+              | User_defined t -> 
+                P.sprintf "(fun d -> `%s (%s (decode_sub decode_%s d)))" 
+                  (constructor_name variant_name) field_name t  
+              | _ -> 
+                let field_type = string_of_field_type false field_type in 
+                P.sprintf "(fun d -> `%s (%s (decode_%s_as_%s d)))" 
+                  (constructor_name variant_name)
+                  field_name
+                  (Encoding_util.string_of_payload_kind payload_kind)
+                  field_type 
             in 
             s ^ P.sprintf "\n  (%i, %s);" field_number decoding 
           )
-          | One_of _ -> failwith "Programatic error"
+          | One_of _ -> raise @@ E.programmatic_error E.Recursive_one_of
         ) s constructors
       )
     ) s fields in 
@@ -277,40 +275,42 @@ module Codegen = struct
       record_name 
 
   let gen_decode ({record_name; fields } as field) = 
-    let s = P.sprintf "let decode_%s =" record_name in
-    let s = s ^ P.sprintf "  \n%s" (add_indentation 1 @@ gen_mappings field) in 
-    let s = s ^ "\n  in" in 
-    let s = s ^ "\n  (fun d ->" in 
-    let s = s ^ P.sprintf "\n    let l = decode d %s_mappings []  in  {" record_name in 
-    let s = s ^ add_indentation 3 @@ List.fold_left (fun s field -> 
-      let {
-        encoding_type;
-        field_type; 
-        field_name; 
-        is_option;
-      } = field in 
-      match encoding_type with 
-      | Regular_field {field_number; _ } -> ( 
-          let constructor = constructor_name (string_of_field_type false field_type) in  
-          match is_option with
-          | false -> 
-            s ^ P.sprintf "\n%s = (match required %i l with | `%s __v -> __v | _ -> e());"
-                field_name field_number constructor
-          | true -> 
-            s ^ P.sprintf "\n%s = optional %i l (function | `%s __v -> __v | _ -> e());"
-                field_name field_number constructor
-      )
-      | One_of {constructors; variant_name} -> 
-          let all_numbers = List.fold_left (fun s {encoding_type; _ } -> 
-            match encoding_type with
-            | Regular_field {field_number; _ } -> s ^ (P.sprintf "%i;" field_number)
-            | One_of _ -> failwith "Programatic error"
-          ) "[" constructors in 
-          let all_numbers = all_numbers ^ "]" in 
-          s ^ P.sprintf "\n%s = (match oneof %sl with | `%s __v -> __v | _ -> e());"
-              field_name all_numbers (constructor_name variant_name)
-    ) "" fields in 
-    let s = s ^ "\n    }" in 
-    s ^ "\n  )"
+    String.concat "" [
+      P.sprintf "let decode_%s =" record_name;
+      P.sprintf "  \n%s" (add_indentation 1 @@ gen_mappings field); 
+      "\n  in";
+      "\n  (fun d ->"; 
+      P.sprintf "\n    let l = decode d %s_mappings []  in  {" record_name;
+      add_indentation 3 @@ List.fold_left (fun s field -> 
+        let {
+          encoding_type;
+          field_type; 
+          field_name; 
+          is_option;
+        } = field in 
+        match encoding_type with 
+        | Regular_field {field_number; _ } -> ( 
+            let constructor = constructor_name (string_of_field_type false field_type) in  
+            match is_option with
+            | false -> 
+              s ^ P.sprintf "\n%s = (match required %i l with | `%s __v -> __v | _ -> e());"
+                  field_name field_number constructor
+            | true -> 
+              s ^ P.sprintf "\n%s = optional %i l (function | `%s __v -> __v | _ -> e());"
+                  field_name field_number constructor
+        )
+        | One_of {constructors; variant_name} -> 
+            let all_numbers = List.fold_left (fun s {encoding_type; _ } -> 
+              match encoding_type with
+              | Regular_field {field_number; _ } -> s ^ (P.sprintf "%i;" field_number)
+              | One_of _ -> raise @@ E.programmatic_error E.Recursive_one_of
+            ) "[" constructors in 
+            let all_numbers = all_numbers ^ "]" in 
+            s ^ P.sprintf "\n%s = (match oneof %sl with | `%s __v -> __v | _ -> e());"
+                field_name all_numbers (constructor_name variant_name)
+      ) "" fields;
+      "\n    }";
+      "\n  )";
+    ]
      
 end 
