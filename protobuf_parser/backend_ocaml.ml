@@ -312,5 +312,61 @@ module Codegen = struct
       "\n    }";
       "\n  )";
     ]
+
+  (* ----TODO TEST --- *)
+
+  let gen_encode {record_name; fields } = 
+    P.printf "gen_encode record_name: %s\n" record_name; 
+
+    let gen_encode_field field_number payload_kind field_type = 
+      P.sprintf "\nPc.Encoder.key (%i, Pc.%s) encoder; " 
+        field_number (constructor_name @@ Encoding_util.string_of_payload_kind payload_kind) ^ 
+      match field_type with 
+      | User_defined t -> 
+        P.sprintf "\nencode_%s x encoder;" t 
+      | _ ->  
+        P.sprintf "\nencode_%s_as_%s x encoder;"
+          (string_of_field_type false field_type) 
+          (Encoding_util.string_of_payload_kind payload_kind) 
+    in
+
+    let s = P.sprintf "let encode_%s v encoder = " record_name in 
+    s ^ add_indentation 1 @@ List.fold_left (fun s field -> 
+     Printf.printf "gen_code field_name: %s\n" field.field_name;
+     let {
+       encoding_type;
+       field_type; 
+       field_name; 
+       is_option;
+     } = field in 
+     match encoding_type with 
+     | Regular_field {field_number; payload_kind } -> ( 
+       match is_option with
+       | false -> (s ^ 
+         P.sprintf "\nlet x = v.%s in " field_name ^ 
+         gen_encode_field field_number payload_kind field_type
+       )
+       | true -> (s ^ 
+         P.sprintf "\nmatch v.%s with " field_name ^ 
+         P.sprintf "\n| Some x -> (%s" 
+           (add_indentation 1 @@ gen_encode_field field_number payload_kind field_type) ^ 
+         P.sprintf "\n)" ^ 
+         P.sprintf "\n| None -> ();"
+       )
+     )
+     | One_of {constructors; variant_name} -> (  
+       s ^ P.sprintf "\nmatch v.%s with" field_name ^ 
+       List.fold_left (fun s {encoding_type; field_type; field_name; } ->
+         match encoding_type with 
+         | Regular_field {field_number; payload_kind} -> (
+             s ^ P.sprintf "\n| %s x -> (" field_name ^ 
+             (add_indentation 1 @@ gen_encode_field field_number payload_kind field_type) ^ 
+             "\n)" 
+         )
+         | _ -> raise @@ E.programmatic_error E.Recursive_one_of
+       ) "" constructors ^ ";"  (* one of fields *) 
+     )                          (* one of        *)
+    ) "" fields ^               (* record fields *) 
+    "\n()"
      
 end 
