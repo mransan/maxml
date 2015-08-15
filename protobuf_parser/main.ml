@@ -50,7 +50,8 @@ let () =
     | BO.Record r -> 
       s ^ 
       BO.Codegen.gen_record_type r ^ "\n\n" ^ 
-      BO.Codegen.gen_decode r ^ "\n\n" 
+      BO.Codegen.gen_decode r ^ "\n\n" ^  
+      BO.Codegen.gen_encode r ^ "\n\n" 
     | BO.Variant v -> 
       s ^ 
       BO.Codegen.gen_variant_type v ^ "\n\n"
