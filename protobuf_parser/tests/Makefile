@@ -45,8 +45,8 @@ test02_ml.tsk: test02_types.mli test02_types.ml main02_ml.ml
 test02: test02_ml.tsk test02_cpp.tsk 
 	./test02_cpp.tsk encode
 	./test02_ml.tsk decode
-	#./test02_ml.tsk encode
-	#./test02_cpp.tsk decode
+	./test02_ml.tsk encode
+	./test02_cpp.tsk decode
 
 
 
