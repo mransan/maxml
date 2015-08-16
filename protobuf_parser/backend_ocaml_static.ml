@@ -4,21 +4,31 @@ let prefix_payload_to_ocaml_t  = {|
 module Pc = Protobuf_codec 
 
 let decode_varint_as_int decoder = 
-  Pc.Decoder.int_of_int64 "" @@ Pc.Decoder.varint decoder 
+  (* Pc.Decoder.int_of_int64 "" @@ Pc.Decoder.varint decoder *) 
+  Int64.to_int @@ Pc.Decoder.varint decoder
+
+let decode_varint_zigzag_as_int decoder = 
+  (* Pc.Decoder.int_of_int64 "" @@ Pc.Decoder.varint decoder *) 
+  Int64.to_int @@ Pc.Decoder.zigzag decoder
 
 let encode_int_as_varint v encoder = 
   Pc.Encoder.varint (Int64.of_int v) encoder  
 
+let encode_int_as_varint_zigzag v encoder = 
+  Pc.Encoder.zigzag (Int64.of_int v) encoder  
+
 let decode_bits32_as_int decoder = 
-  Pc.Decoder.int_of_int32 "" @@ Pc.Decoder.bits32 decoder 
+  (* Pc.Decoder.int_of_int32 "" @@ Pc.Decoder.bits32 decoder *) 
+  Int32.to_int @@ Pc.Decoder.bits32 decoder
 
 let encode_int_as_bits32 v encoder = 
   Pc.Encoder.bits32 (Pc.Encoder.int32_of_int "" v) encoder
 
 let decode_bits64_as_int decoder = 
-  Pc.Decoder.int_of_int64 "" @@ Pc.Decoder.bits64 decoder 
+  (* Pc.Decoder.int_of_int64 "" @@ Pc.Decoder.bits64 decoder *)
+  Int64.to_int @@ Pc.Decoder.bits64 decoder 
 
-let encode_int_as_bit64 v encoder = 
+let encode_int_as_bits64 v encoder = 
   Pc.Encoder.bits64 (Int64.of_int v) encoder
 
 let decode_varint_as_bool decoder = 

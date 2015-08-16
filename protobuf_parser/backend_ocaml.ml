@@ -23,12 +23,21 @@ let string_of_field_type is_option field_type =
   then s ^ " option"
   else s  
 
+(** utility function used to generate decode/encode function names 
+    which are implemented in [Backend_ocaml_static].
+ *)
+let fname_of_payload_kind = function 
+  | Encoding_util.Varint zigzag -> if zigzag then "varint_zigzag" else "varint"
+  | Encoding_util.Bits32        -> "bits32"
+  | Encoding_util.Bits64        -> "bits64"
+  | Encoding_util.Bytes         -> "bytes"
+
 type field_name = string 
 
 type encoding_type = 
   | Regular_field of {
     field_number:int ; 
-    payload_kind:Pc.payload_kind; 
+    payload_kind:Encoding_util.payload_kind; 
   }
   | One_of of variant  
 
@@ -240,7 +249,7 @@ module Codegen = struct
              let field_type = string_of_field_type false field_type in 
              P.sprintf "(fun d -> `%s (decode_%s_as_%s d))" 
                (constructor_name field_type)
-               (Encoding_util.string_of_payload_kind payload_kind)
+               (fname_of_payload_kind payload_kind)
                field_type 
         in 
         s ^ P.sprintf "\n  (%i, %s);" field_number decoding 
@@ -258,7 +267,7 @@ module Codegen = struct
                 P.sprintf "(fun d -> `%s (%s (decode_%s_as_%s d)))" 
                   (constructor_name variant_name)
                   field_name
-                  (Encoding_util.string_of_payload_kind payload_kind)
+                  (fname_of_payload_kind payload_kind)
                   field_type 
             in 
             s ^ P.sprintf "\n  (%i, %s);" field_number decoding 
@@ -327,7 +336,7 @@ module Codegen = struct
       | _ ->  
         P.sprintf "\nencode_%s_as_%s x encoder;"
           (string_of_field_type false field_type) 
-          (Encoding_util.string_of_payload_kind payload_kind) 
+          (fname_of_payload_kind payload_kind) 
     in
 
     let s = P.sprintf "let encode_%s v encoder = " record_name in 
