@@ -235,7 +235,7 @@ module Codegen = struct
       | Regular_field {field_number; payload_kind } -> (
         let decoding = match field_type with 
           | User_defined t -> 
-             P.sprintf "(fun d -> `%s (decode_sub decode_%s d))" (constructor_name t) t  
+             P.sprintf "(fun d -> `%s (decode_%s (Pc.Decoder.nested d)))" (constructor_name t) t  
           | _ -> 
              let field_type = string_of_field_type false field_type in 
              P.sprintf "(fun d -> `%s (decode_%s_as_%s d))" 
@@ -251,7 +251,7 @@ module Codegen = struct
           | Regular_field {field_number; payload_kind } -> (
             let decoding  =  match field_type with 
               | User_defined t -> 
-                P.sprintf "(fun d -> `%s (%s (decode_sub decode_%s d)))" 
+                P.sprintf "(fun d -> `%s (%s (decode_%s (Pc.Decoder.nested d))))" 
                   (constructor_name variant_name) field_name t  
               | _ -> 
                 let field_type = string_of_field_type false field_type in 
@@ -323,7 +323,7 @@ module Codegen = struct
         field_number (constructor_name @@ Encoding_util.string_of_payload_kind payload_kind) ^ 
       match field_type with 
       | User_defined t -> 
-        P.sprintf "\nencode_%s x encoder;" t 
+        P.sprintf "\nPc.Encoder.nested (encode_%s x) encoder;" t 
       | _ ->  
         P.sprintf "\nencode_%s_as_%s x encoder;"
           (string_of_field_type false field_type) 
@@ -368,5 +368,9 @@ module Codegen = struct
      )                          (* one of        *)
     ) "" fields ^               (* record fields *) 
     "\n()"
-     
+  
+  let gen_encode_sig {record_name; _ } = 
+    P.sprintf "val encode_%s : %s -> Protobuf_codec.Encoder.t -> unit"
+      record_name
+      record_name 
 end 
