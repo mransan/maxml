@@ -1,4 +1,6 @@
 
+module L = Logger 
+
 (** [parse_args ()] parses the command line argument 
     and returns [(in_channel, out_channel)] where 
     in_channel is where the protobuf definition can be read from 
@@ -7,8 +9,10 @@
 let parse_args () = 
   let proto_file_name = ref "" in  
   let out_file_name   = ref "" in 
+  let debug           = ref false in  
   let cmd_line_args = [
     ("-out", Arg.Set_string out_file_name, "out file name");  
+    ("-debug", Arg.Set debug, "enable debugging");  
   ] in 
   let anon_fun  = (fun proto_file -> 
     proto_file_name := proto_file
@@ -22,12 +26,15 @@ let parse_args () =
   let sig_oc = match !out_file_name with 
     | "" -> stdout 
     | _  -> open_out (!out_file_name ^ ".mli") in 
-  (open_in !proto_file_name, sig_oc, struct_oc)  
+  (open_in !proto_file_name, sig_oc, struct_oc, !debug)  
 
 let () = 
 
-  let ic, sig_oc, struct_oc = parse_args () in 
+  let ic, sig_oc, struct_oc, enable_debugging = parse_args () in 
 
+  if enable_debugging
+  then L.setup_from_out_channel stdout;
+    
   (* -- Compilation -- *)
   let proto = 
     Parser.proto_ Lexer.lexer (Lexing.from_channel ic)
@@ -36,9 +43,9 @@ let () =
   let astc_msgs = List.fold_left (fun astc_msgs ast_msg -> 
     astc_msgs @ Astc_util.compile_message_p1 scope ast_msg
   ) [] proto.Ast.messages in 
-  Printf.printf "-- Phase 1 --\n"; 
+  L.log "-- Phase 1 --\n"; 
   List.iter (fun msg -> 
-    print_endline @@ Astc_util.string_of_message msg
+    L.endline @@ Astc_util.string_of_message msg
   ) astc_msgs; 
   let astc_msgs = List.map (Astc_util.compile_message_p2 astc_msgs) astc_msgs in 
 
