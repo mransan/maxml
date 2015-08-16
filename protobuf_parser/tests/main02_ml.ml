@@ -82,50 +82,71 @@ module Task_util = struct
 
 end 
 
-let decode_ref_data () =
-  ()
+let decode_ref_data () = {
+  T.o01 = 1.0;
+  T.o02 = 2.0;
+  T.o03 = (- 123);
+  T.o04 = 456;
+  T.o05 = 123;
+  T.o06 = 456; 
+  T.o07 = (- 123);
+  T.o08 = (- 456); 
+  T.o09 = 123;
+  T.o10 = 456;
+  (*
+  T.o11 ;
+  T.o12 ;
+  *)
+  T.o13 = true;
+  T.o14 = "Iam a test string";
+  T.o15 = "Iam a test byte"; 
+}
+
+
+let inc_size = 16 
+
+let get_binary_file_content file_name = 
+  let ic     = open_in_bin file_name in 
+  let rec loop b offset remaining = 
+    match input ic b offset remaining with
+    | 0 -> (b, offset)
+    | i when i = remaining -> (
+      let b = Bytes.extend b 0 inc_size in 
+      loop b (offset + remaining) inc_size
+    )
+    | i -> (
+      (b, offset + i) 
+    ) 
+  in 
+  loop (Bytes.create inc_size) 0 inc_size
+
 
 let decode () = 
-  let ic     = open_in_bin "test02.c2ml.data" in 
-  let buffer = Bytes.create 1024 in 
-  let size   = ref 0 in 
-  try 
-    while true do  
-      Bytes.set buffer !size (input_char ic); 
-      size := !size + 1
-    done
-  with | End_of_file -> (); 
-  Printf.printf "Done reading data, size=%i\n" !size ;
+  let buffer, size = get_binary_file_content "test02.c2ml.data" in 
+  Printf.printf "Done reading data, size=%i\n" size ;
 
-  let buffer = Bytes.sub buffer 0 !size in 
-
+  let buffer = Bytes.sub buffer 0 size in 
   let decoder = Pc.Decoder.of_bytes buffer in 
+  
   let abt = T.decode_allbasicstypes decoder in  
-  (*
-  if cp = decode_ref_data () 
+  if abt = decode_ref_data () 
   then (
-    print_endline "-- Good --"; 
+    print_endline "ML: -- Good --"; 
     exit 0
   )
   else (
-    print_endline "-- Test Failed --";  
-  *)
+    print_endline "ML: -- Test Failed --";  
     print_endline @@ Debug.string_of_abt abt;
-    flush stdout;
-    exit 0
-  (* ) *)
+    exit 1
+  )
 
 let encode () = 
-  (*
-  let cp = decode_ref_data () in 
+  let abt = decode_ref_data () in 
   let encoder = Pc.Encoder.create () in 
-  T.encode_couple cp encoder; 
-  let oc = open_out_bin "test01.ml2c.data" in 
+  T.encode_allbasicstypes abt encoder; 
+  let oc = open_out_bin "test02.ml2c.data" in 
   output_bytes oc @@ Pc.Encoder.to_bytes encoder 
-  *)
-  ()
    
-
 let () = 
 
   let mode   = Task_util.parse_args () in 

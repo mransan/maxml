@@ -6,8 +6,8 @@
 
 AllBasicsTypes create_test_all_basic_types() {
     AllBasicsTypes abt;
-    abt.set_o01(1.23456); 
-    abt.set_o02(1.234); 
+    abt.set_o01(1.0); 
+    abt.set_o02(2.0); 
     abt.set_o03(-123); 
     abt.set_o04(456); 
     abt.set_o05(123); 
@@ -84,6 +84,8 @@ int main(int argc, char const* const argv[]) {
         }
         else {
             std::cout << "C++: -- Good --" 
+                      << std::endl
+                      << abt.DebugString()
                       << std::endl;
             return 0;
         }

@@ -147,8 +147,10 @@ let compile_field ?as_constructor ?is_option message_scope all_messages field =
     | Astc.Field_type_sint64  -> Int
     | Astc.Field_type_fixed32  -> Int
     | Astc.Field_type_fixed64  -> Int
-    | Astc.Field_type_sfixed32  -> Int
-    | Astc.Field_type_sfixed64 -> Int
+    | Astc.Field_type_sfixed32  -> 
+        raise @@ E.unsupported_field_type ~field_name ~field_type:"sfixed32" ~backend_name:"OCaml" () 
+    | Astc.Field_type_sfixed64 -> 
+        raise @@ E.unsupported_field_type ~field_name ~field_type:"sfixed64" ~backend_name:"OCaml" () 
     | Astc.Field_type_bool  -> Bool
     | Astc.Field_type_string  -> String
     | Astc.Field_type_bytes  -> Bytes

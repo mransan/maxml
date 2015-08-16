@@ -19,6 +19,11 @@ type error =
     field_name: string; 
     info: string; 
   } (** When a default value type type does not match the field type *)
+  | Unsupported_field_type of {
+    field_name: string; 
+    field_type: string; 
+    backend_name:string;
+  } (** When a particular backend does not support the field type *)
   | Programatic_error of programmatic_error 
 
 exception Compilation_error of error  
@@ -40,6 +45,12 @@ val duplicated_field_number :
 val invalid_default_value : 
   field_name:string -> 
   info:string ->
+  unit -> exn
+
+val unsupported_field_type : 
+  field_name:string ->
+  field_type:string -> 
+  backend_name:string ->
   unit -> exn
 
 val programmatic_error : programmatic_error -> exn
