@@ -83,8 +83,5 @@ let oneof numbers l =
  | Some x -> x 
  | None -> failwith "None of oneof value could be found." 
 
-let decode_sub f d = 
-  Pc.Decoder.decode_exn f @@ Pc.Decoder.bytes d
-
 let e () = failwith "programmatic error" 
 |}

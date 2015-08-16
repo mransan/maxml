@@ -24,13 +24,16 @@ test01_ml.tsk: test01_types.mli test01_types.ml test01_ml.ml
 .PHONY: all clean test_01 
 
 test01: test01_ml.tsk test01.tsk 
-	./test01.tsk
-	./test01_ml.tsk
+	./test01.tsk encode
+	./test01_ml.tsk decode
+	./test01_ml.tsk encode
+	./test01.tsk decode
 
 clean:
 	rm -f test01.pb*
 	rm -f test01_types.*
 	rm -f *.tsk
+	rm -f *.data
 	rm -f *.o
 
 all: test01

@@ -27,6 +27,8 @@ let parse_args () =
 let () = 
 
   let ic, sig_oc, struct_oc = parse_args () in 
+
+  (* -- Compilation -- *)
   let proto = 
     Parser.proto_ Lexer.lexer (Lexing.from_channel ic)
   in 
@@ -39,6 +41,9 @@ let () =
     print_endline @@ Astc_util.string_of_message msg
   ) astc_msgs; 
   let astc_msgs = List.map (Astc_util.compile_message_p2 astc_msgs) astc_msgs in 
+
+  (* -- OCaml Backend -- *)
+
   let module BO = Backend_ocaml in 
   let otypes = List.fold_left (fun otypes m -> 
     otypes @ BO.compile astc_msgs m 
@@ -61,7 +66,8 @@ let () =
     | BO.Record r -> 
       s ^ 
       BO.Codegen.gen_record_type r ^ "\n\n" ^ 
-      BO.Codegen.gen_decode_sig  r ^ "\n\n" 
+      BO.Codegen.gen_decode_sig  r ^ "\n\n" ^  
+      BO.Codegen.gen_encode_sig  r ^ "\n\n" 
     | BO.Variant v -> 
       s ^ 
       BO.Codegen.gen_variant_type v ^ "\n\n"
