@@ -1,7 +1,7 @@
 
 module Pc = Protobuf_codec
 module E  = Exception 
-
+module L  = Logger 
 
 type field_type = 
   | String 
@@ -316,7 +316,7 @@ module Codegen = struct
   (* ----TODO TEST --- *)
 
   let gen_encode {record_name; fields } = 
-    P.printf "gen_encode record_name: %s\n" record_name; 
+    L.log "gen_encode record_name: %s\n" record_name; 
 
     let gen_encode_field field_number payload_kind field_type = 
       P.sprintf "\nPc.Encoder.key (%i, Pc.%s) encoder; " 
@@ -332,7 +332,7 @@ module Codegen = struct
 
     let s = P.sprintf "let encode_%s v encoder = " record_name in 
     s ^ add_indentation 1 @@ List.fold_left (fun s field -> 
-     Printf.printf "gen_code field_name: %s\n" field.field_name;
+     L.log "gen_code field_name: %s\n" field.field_name;
      let {
        encoding_type;
        field_type; 

@@ -1,6 +1,7 @@
 
   
 module E = Exception 
+module L = Logger 
 
 let field_name {Astc.field_parsed; _ } = 
   let {Ast.field_name; _ } = field_parsed in 
@@ -297,16 +298,16 @@ let compile_message_p2 messages ({
     
   let process_field_type message_name field = 
     let field_name = field_name field in 
-    Printf.printf "field_name: %s\n" field_name; 
+    L.log "field_name: %s\n" field_name; 
     match field.Astc.field_type with 
     | Astc.Field_type_message ({Astc.scope; Astc.type_name; Astc.from_root} as unresolved) -> ( 
-      print_endline @@ string_of_unresolved unresolved ; 
+      L.endline @@ string_of_unresolved unresolved ; 
       
       let search_scopes = search_scopes scope from_root in 
 
-      Printf.printf "message scope: %s\n" @@ string_of_string_list message_scope;
+      L.log "message scope: %s\n" @@ string_of_string_list message_scope;
       List.iteri (fun i scope -> 
-        Printf.printf "search_scope[%2i] : %s\n" i @@ string_of_string_list scope 
+        L.log "search_scope[%2i] : %s\n" i @@ string_of_string_list scope 
       ) search_scopes;
 
       let id  = List.fold_left (fun id scope -> 

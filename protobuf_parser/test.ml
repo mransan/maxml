@@ -706,7 +706,7 @@ let () =
     let s = {|let test_mappings = [
   (1, (fun d -> `Int (decode_varint_as_int d)));
   (2, (fun d -> `String (decode_bytes_as_string d)));
-  (3, (fun d -> `Other (decode_sub decode_other d)));
+  (3, (fun d -> `Other (decode_other (Pc.Decoder.nested d))));
 ]|} in
     assert (s = BO.Codegen.gen_mappings r);
     ()

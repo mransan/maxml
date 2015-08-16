@@ -15,8 +15,7 @@ test01.tsk: main01.cpp test01.pb.cc
 	g++ -I ./  -I $(PB_HINC) $? -L $(PB_LINC) -l protobuf -o $@
 
 test01_types.ml test01_types.mli : test01.proto
-	../ml-protoc -out ./test01_types test01.proto
-
+	../ml-protoc -debug -out ./test01_types test01.proto
 
 test01_ml.tsk: test01_types.mli test01_types.ml test01_ml.ml 
 	$(OCAMLOPT) -I $(PBC_INC) protobuf_codec.cmxa $? -o $@ 

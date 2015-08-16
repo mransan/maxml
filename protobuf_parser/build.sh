@@ -10,6 +10,7 @@ OCAML_INC=../../install/build/lib/ocaml/site-lib/ocaml-protobuf/
 
 CMXS="
 str.cmxa 
+logger.cmx
 ast.cmx 
 ast_util.cmx 
 astc.cmx 
@@ -25,6 +26,8 @@ backend_ocaml.cmx
 
 $OCAMLYACC parser.mly
 $OCAMLLEX  lexer.mll
+$OCAMLOPT -c logger.mli
+$OCAMLOPT -c logger.ml
 $OCAMLOPT -c ast.ml
 $OCAMLOPT -c astc.ml
 $OCAMLOPT -c exception.mli
