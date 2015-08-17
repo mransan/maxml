@@ -26,23 +26,23 @@ backend_ocaml.cmx
 
 $OCAMLYACC parser.mly
 $OCAMLLEX  lexer.mll
-$OCAMLOPT -c logger.mli
-$OCAMLOPT -c logger.ml
-$OCAMLOPT -c ast.ml
-$OCAMLOPT -c astc.ml
-$OCAMLOPT -c exception.mli
-$OCAMLOPT -c exception.ml
-$OCAMLOPT -c ast_util.mli
-$OCAMLOPT -c ast_util.ml
-$OCAMLOPT -c astc_util.mli
-$OCAMLOPT -c astc_util.ml
-$OCAMLOPT -c parser.mli
-$OCAMLOPT -c lexer.ml
-$OCAMLOPT -c parser.ml
-$OCAMLOPT -I $PBC_INC -c encoding_util.ml 
-$OCAMLOPT -I $PBC_INC -c backend_ocaml_static.ml 
-$OCAMLOPT -I $PBC_INC -c backend_ocaml.ml 
-$OCAMLOPT -I $PBC_INC -c main.ml 
-$OCAMLOPT -I $PBC_INC -c test.ml 
-$OCAMLOPT -I $PBC_INC -o test.tsk $CMXS test.cmx
-$OCAMLOPT -I $PBC_INC -o ml-protoc $CMXS main.cmx
+$OCAMLOPT -w +A -c logger.mli
+$OCAMLOPT -w +A -c logger.ml
+$OCAMLOPT -w +A -c ast.ml
+$OCAMLOPT -w +A -c astc.ml
+$OCAMLOPT -w +A -c exception.mli
+$OCAMLOPT -w +A-4 -c exception.ml
+$OCAMLOPT -w +A -c ast_util.mli
+$OCAMLOPT -w +A -c ast_util.ml
+$OCAMLOPT -w +A -c astc_util.mli
+$OCAMLOPT -w +A-4 -c astc_util.ml
+$OCAMLOPT -w +A -c parser.mli
+$OCAMLOPT -w +A -c lexer.ml
+$OCAMLOPT -w +A -c parser.ml
+$OCAMLOPT -w +A -I $PBC_INC -c encoding_util.ml 
+$OCAMLOPT -w +A -I $PBC_INC -c backend_ocaml_static.ml 
+$OCAMLOPT -w +A-4 -I $PBC_INC -c backend_ocaml.ml 
+$OCAMLOPT -w +A-4 -I $PBC_INC -c main.ml 
+$OCAMLOPT  -I $PBC_INC -c test.ml 
+$OCAMLOPT  -I $PBC_INC -o test.tsk $CMXS test.cmx
+$OCAMLOPT -w +A-4 -I $PBC_INC -o ml-protoc $CMXS main.cmx

@@ -21,7 +21,7 @@ let empty_scope  = { Astc.namespaces = []; Astc.message_names = [] }
 let rev_split_by_char c s = 
   let rec loop i l = 
     try 
-      let i' = String.index_from s i '.' in 
+      let i' = String.index_from s i c  in 
       let s' = String.sub s i (i' - i)  in 
       loop (i'+1) (if s' = "" then l else s'::l)  
     with Not_found -> (String.sub s i (String.length s - i) ):: l 
@@ -98,14 +98,16 @@ let map_field_type : 'a Astc.field_type  -> 'b Astc.field_type = function
  | Astc.Field_type_bool       -> Astc.Field_type_bool 
  | Astc.Field_type_string     -> Astc.Field_type_string 
  | Astc.Field_type_bytes      -> Astc.Field_type_bytes 
- | _ -> raise @@ E.programmatic_error E.Unexpect_field_type 
+ | Astc.Field_type_message  _ -> raise @@ E.programmatic_error E.Unexpect_field_type 
 
 let compile_default field_name constant = function  
   | Astc.Field_type_double 
   | Astc.Field_type_float -> (
     match constant with 
     | Ast.Constant_int i -> Ast.Constant_float (float_of_int i)
-    | _ -> 
+    | Ast.Constant_float _  -> constant
+    | Ast.Constant_string _ 
+    | Ast.Constant_bool _ -> 
       raise @@ E.invalid_default_value 
         ~field_name ~info:"invalid default type (float/int expected)" ()
   )
@@ -119,7 +121,9 @@ let compile_default field_name constant = function
   | Astc.Field_type_sfixed64 -> (
     match constant with 
     | Ast.Constant_int _ -> constant  
-    | _ -> 
+    | Ast.Constant_string _ 
+    | Ast.Constant_bool  _ 
+    | Ast.Constant_float _ -> 
       raise @@ E.invalid_default_value 
         ~field_name ~info:"invalid default type (int expected)" ()
   )
@@ -130,19 +134,25 @@ let compile_default field_name constant = function
       then constant 
       else raise @@ E.invalid_default_value 
         ~field_name ~info:"negative default value for unsigned int" () 
-    | _ -> raise @@ E.invalid_default_value
+    | Ast.Constant_string _ 
+    | Ast.Constant_bool  _ 
+    | Ast.Constant_float _ -> raise @@ E.invalid_default_value
         ~field_name ~info:"invalid default type (int expected)" ()
   )
   | Astc.Field_type_bool -> (
     match constant with 
     | Ast.Constant_bool _ -> constant
-    | _ -> raise @@ E.invalid_default_value 
+    | Ast.Constant_string _ 
+    | Ast.Constant_float _ 
+    | Ast.Constant_int _  -> raise @@ E.invalid_default_value 
       ~field_name ~info:"invalid default type (bool expected)" ()
   ) 
   | Astc.Field_type_string -> (
    match constant with 
    | Ast.Constant_string _ -> constant
-    | _ -> raise @@ E.invalid_default_value 
+    | Ast.Constant_float _ 
+    | Ast.Constant_int _ 
+    | Ast.Constant_bool  _  -> raise @@ E.invalid_default_value 
       ~field_name ~info:"invalid default type (string expected)" ()
   ) 
   | Astc.Field_type_bytes -> raise @@ E.invalid_default_value 
@@ -157,8 +167,8 @@ let get_default field_name field_options field_type =
 
 let compile_field_p1 ({
   Ast.field_name;
-  Ast.field_number;
-  Ast.field_label;
+  Ast.field_number = _ ;
+  Ast.field_label  = _ ;
   Ast.field_type;
   Ast.field_options;
 } as field_parsed) = 
@@ -251,6 +261,7 @@ let find_all_message_in_field_scope messages scope =
   ) messages 
 
 let compile_message_p2 messages ({
+  Astc.id = _ ; 
   Astc.message_name; 
   Astc.message_scope = {Astc.namespaces ; Astc.message_names; }; 
   Astc.message_body} as message)  = 

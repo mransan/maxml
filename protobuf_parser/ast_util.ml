@@ -41,10 +41,10 @@ let proto ?package messages = {
 
 let rec message_printer ?level:(level = 0) {
   Ast.message_name; 
-  Ast.message_body; } = 
+  Ast.message_body; _ } = 
 
   let prefix () = 
-    for i=0 to level  - 1 do 
+    for _ =0 to level  - 1 do 
       Printf.printf " ";
     done; 
   in 
