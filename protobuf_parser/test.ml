@@ -38,6 +38,8 @@ let () =
       loop lexbuf
   in  
 
+  let _ = loop in 
+
   (*
   loop @@ Lexing.from_string proto;  
   loop @@ Lexing.from_channel @@ open_in "unittest.proto";

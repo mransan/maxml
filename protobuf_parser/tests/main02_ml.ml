@@ -2,64 +2,6 @@
 module Pc = Protobuf_codec 
 module T  = Test02_types 
 
-module Debug = struct 
-
-  let string_of_abt {
-    T.o01 ;
-    T.o02 ;
-    T.o03 ;
-    T.o04 ;
-    T.o05 ;
-    T.o06 ;
-    T.o07 ;
-    T.o08 ;
-    T.o09 ;
-    T.o10 ;
-    (*
-    T.o11 ;
-    T.o12 ;
-    *)
-    T.o15 ;
-    T.o13 ;
-    T.o14 ;
-  } =  
-
-    Printf.sprintf "
-    T.o01=%f,  
-    T.o02=%f,  
-    T.o03=%i,  
-    T.o04=%i,  
-    T.o05=%i,  
-    T.o06=%i,  
-    T.o07=%i, 
-    T.o08=%i,  
-    T.o09=%i,  
-    T.o10=%i,  
-    T.o11=,  
-    T.o12=,  
-    T.o13=%b,  
-    T.o14=%s,  
-    T.o15=%s"  
-    o01 
-    o02 
-    o03 
-    o04 
-    o05 
-    o06 
-    o07 
-    o08 
-    o09 
-    o10 
-    (*
-    o11 
-    o12 
-    *)
-    o13 
-    o14 
-    o15 
-end 
-
-
 module Task_util = struct 
   type mode = 
     | Encode 
@@ -136,7 +78,7 @@ let decode () =
   )
   else (
     print_endline "ML: -- Test Failed --";  
-    print_endline @@ Debug.string_of_abt abt;
+    print_endline @@ T.string_of_allbasicstypes abt;
     exit 1
   )
 

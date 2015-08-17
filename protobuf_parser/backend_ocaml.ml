@@ -23,6 +23,14 @@ let string_of_field_type is_option field_type =
   then s ^ " option"
   else s  
 
+let printf_char_of_field_type = function
+  | String    -> 's' 
+  | Float     -> 'f'
+  | Int       -> 'i'
+  | Bytes     -> 's'
+  | Bool      -> 'b'
+  | User_defined _ -> 's'
+
 (** utility function used to generate decode/encode function names 
     which are implemented in [Backend_ocaml_static].
  *)
@@ -82,7 +90,7 @@ let type_name_of_message field_message_scope message_scope message_name =
   let module S = String in 
 
   let message_scope = 
-    (** TODO this is a brute force method which only works for 
+    (* TODO this is a brute force method which only works for 
         field which are in the same namespaces as their types. 
      *) 
     if field_message_scope.Astc.namespaces = message_scope.Astc.namespaces 
@@ -131,10 +139,6 @@ let compile_field ?as_constructor ?is_option message_scope all_messages field =
     | None   -> record_field_name field_name 
   in 
 
-  (** TODO mapping from Astc.field_type to the Pc.payload_kind 
-      should be outside of Ocaml_backend module 
-      since it is general to ALL language. 
-   *)
   let payload_kind = Encoding_util.payload_kind_of_field_type encoding_type in 
   let field_type   = match encoding_type with
     | Astc.Field_type_double  -> Float
@@ -172,7 +176,7 @@ let compile_oneof all_messages message_scope outer_message_name {Astc.oneof_name
   let {Astc.message_names; _ } = message_scope in 
   let variant_name = type_name (message_names @ [outer_message_name]) oneof_name in 
   let constructors = List.map (fun field -> 
-    (** TODO fix hard coding the empty_scope and rather
+    (* TODO fix hard coding the empty_scope and rather
         pass down the appropriate scope.
       *)
     compile_field ~as_constructor:() message_scope all_messages field 
@@ -188,6 +192,7 @@ let compile
     Astc.message_scope;
     Astc.message_name; 
     Astc.message_body; 
+    Astc.id = _ ; 
   } = message in 
 
   let {Astc.message_names; Astc.namespaces = _ } = message_scope in 
@@ -221,78 +226,104 @@ let compile
 module Codegen = struct 
   module P = Printf
 
+  let sp x =  P.sprintf ("\n" ^^ x)  
+  (** [sp x] same as sprintf but prefixed with new line *)
+
+  let nl s = "\n" ^ s  
+  (** [nl s] appends new line *)
+
+  let concat = String.concat ""
+  (** [concat l] concatenate a string list *)
+
   let add_indentation n s = 
     Str.global_replace (Str.regexp "^" ) (String.make (n * 2) ' ') s  
+  (** [add_indentation n s] adds a multiple of 2 spaces indentation to [s] *)
 
+
+  (** [gen_record_type r] generate the OCaml type declaration for [r]
+   *)
   let gen_record_type {record_name; fields } = 
-    let s = P.sprintf "type %s = {" record_name in 
-    let s = List.fold_left (fun s {field_name; field_type; is_option; _ } -> 
-      let type_name = string_of_field_type is_option field_type in 
-      s ^ P.sprintf "\n  %s : %s;" field_name type_name
-    ) s fields in 
-    s ^ "\n}"
+    concat [
+      P.sprintf "type %s = {" record_name;
+      concat @@ List.map (fun {field_name; field_type; is_option; _ } -> 
+        let type_name = string_of_field_type is_option field_type in 
+        sp "  %s : %s;" field_name type_name
+      ) fields;
+      "\n}"
+    ]
   
+  (** [gen_variant_type v] generate the OCaml type declaration for [v]
+   *)
   let gen_variant_type {variant_name; constructors } = 
-    let s = P.sprintf "type %s =" variant_name in 
-    List.fold_left (fun s {field_name; field_type; is_option; _ } -> 
-      let type_name = string_of_field_type is_option field_type in 
-      s ^ P.sprintf "\n  | %s of %s" field_name type_name
-    ) s constructors
+    concat [
+      P.sprintf "type %s =" variant_name; 
+      concat @@ List.map (fun {field_name; field_type; is_option; _ } -> 
+        let type_name = string_of_field_type is_option field_type in 
+        sp "  | %s of %s" field_name type_name
+      ) constructors;
+    ]
 
+  (** [gen_mappings r] generates a per record variable to hold the 
+      mapping between a field number and the associated decoding routine. 
+
+      Because the order of fields inside the protobuffer message is not
+      guaranteed, the decoding cannot be done in one step.   
+      The decoding code must therefore first collect all the record fields 
+      values and then create the value of the OCaml type. 
+    *)
   let gen_mappings {record_name; fields} =
-    let s = P.sprintf "let %s_mappings = [" record_name in 
-    let s = List.fold_left (fun s {encoding_type;field_type;_ } -> 
-      match encoding_type with 
-      | Regular_field {field_number; payload_kind } -> (
-        let decoding = match field_type with 
-          | User_defined t -> 
-             P.sprintf "(fun d -> `%s (decode_%s (Pc.Decoder.nested d)))" (constructor_name t) t  
-          | _ -> 
-             let field_type = string_of_field_type false field_type in 
-             P.sprintf "(fun d -> `%s (decode_%s_as_%s d))" 
-               (constructor_name field_type)
-               (fname_of_payload_kind payload_kind)
-               field_type 
-        in 
-        s ^ P.sprintf "\n  (%i, %s);" field_number decoding 
-      )
-      | One_of {variant_name ; constructors; } -> (
-        List.fold_left (fun s {encoding_type; field_type; field_name } -> 
-          match encoding_type with
-          | Regular_field {field_number; payload_kind } -> (
-            let decoding  =  match field_type with 
-              | User_defined t -> 
-                P.sprintf "(fun d -> `%s (%s (decode_%s (Pc.Decoder.nested d))))" 
-                  (constructor_name variant_name) field_name t  
-              | _ -> 
-                let field_type = string_of_field_type false field_type in 
-                P.sprintf "(fun d -> `%s (%s (decode_%s_as_%s d)))" 
-                  (constructor_name variant_name)
-                  field_name
-                  (fname_of_payload_kind payload_kind)
-                  field_type 
-            in 
-            s ^ P.sprintf "\n  (%i, %s);" field_number decoding 
-          )
-          | One_of _ -> raise @@ E.programmatic_error E.Recursive_one_of
-        ) s constructors
-      )
-    ) s fields in 
-    s ^ "\n]"
 
-  let gen_decode_sig {record_name; _ } = 
-    P.sprintf "val decode_%s : Protobuf_codec.Decoder.t -> %s" 
-      record_name
-      record_name 
+    concat [
+      P.sprintf "let %s_mappings = [" record_name;
+      concat @@ List.map (fun {encoding_type;field_type;_ } -> 
+        match encoding_type with 
+        | Regular_field {field_number; payload_kind } -> (
+          let decoding = match field_type with 
+            | User_defined t -> 
+               P.sprintf "(fun d -> `%s (decode_%s (Pc.Decoder.nested d)))" (constructor_name t) t  
+            | _ -> 
+               let field_type = string_of_field_type false field_type in 
+               P.sprintf "(fun d -> `%s (decode_%s_as_%s d))" 
+                 (constructor_name field_type)
+                 (fname_of_payload_kind payload_kind)
+                 field_type 
+          in 
+          sp "  (%i, %s);" field_number decoding 
+        )
+        | One_of {variant_name ; constructors; } -> (
+          concat @@ List.map (fun {encoding_type; field_type; field_name; is_option = _ } -> 
+            match encoding_type with
+            | Regular_field {field_number; payload_kind } -> (
+              let decoding  =  match field_type with 
+                | User_defined t -> 
+                  P.sprintf "(fun d -> `%s (%s (decode_%s (Pc.Decoder.nested d))))" 
+                    (constructor_name variant_name) field_name t  
+                | _ -> 
+                  let field_type = string_of_field_type false field_type in 
+                  P.sprintf "(fun d -> `%s (%s (decode_%s_as_%s d)))" 
+                    (constructor_name variant_name)
+                    field_name
+                    (fname_of_payload_kind payload_kind)
+                    field_type 
+              in 
+              sp "  (%i, %s);" field_number decoding 
+            )            (* Regular_field *)
+            | One_of _ -> raise @@ E.programmatic_error E.Recursive_one_of
+          ) constructors (* All variant constructors *) 
+        )                (* One_of record field *)    
+      ) fields ;
+      "\n]";
+    ]
+
 
   let gen_decode ({record_name; fields } as field) = 
     String.concat "" [
       P.sprintf "let decode_%s =" record_name;
-      P.sprintf "  \n%s" (add_indentation 1 @@ gen_mappings field); 
-      "\n  in";
-      "\n  (fun d ->"; 
-      P.sprintf "\n    let l = decode d %s_mappings []  in  {" record_name;
-      add_indentation 3 @@ List.fold_left (fun s field -> 
+      sp "%s" (add_indentation 1 @@ gen_mappings field); 
+      sp "  in";
+      sp "  (fun d ->"; 
+      sp "    let l = decode d %s_mappings []  in  {" record_name;
+      add_indentation 3 @@ concat @@ List.map (fun field -> 
         let {
           encoding_type;
           field_type; 
@@ -304,11 +335,11 @@ module Codegen = struct
             let constructor = constructor_name (string_of_field_type false field_type) in  
             match is_option with
             | false -> 
-              s ^ P.sprintf "\n%s = (match required %i l with | `%s __v -> __v | _ -> e());"
-                  field_name field_number constructor
+              sp "%s = (match required %i l with | `%s __v -> __v | _ -> e());"
+                field_name field_number constructor
             | true -> 
-              s ^ P.sprintf "\n%s = optional %i l (function | `%s __v -> __v | _ -> e());"
-                  field_name field_number constructor
+              sp "%s = optional %i l (function | `%s __v -> __v | _ -> e());"
+                field_name field_number constructor
         )
         | One_of {constructors; variant_name} -> 
             let all_numbers = List.fold_left (fun s {encoding_type; _ } -> 
@@ -317,71 +348,145 @@ module Codegen = struct
               | One_of _ -> raise @@ E.programmatic_error E.Recursive_one_of
             ) "[" constructors in 
             let all_numbers = all_numbers ^ "]" in 
-            s ^ P.sprintf "\n%s = (match oneof %sl with | `%s __v -> __v | _ -> e());"
-                field_name all_numbers (constructor_name variant_name)
-      ) "" fields;
-      "\n    }";
-      "\n  )";
+            sp "%s = (match oneof %s l with | `%s __v -> __v | _ -> e());"
+              field_name all_numbers (constructor_name variant_name)
+      ) fields;
+      sp "    }";
+      sp "  )";
     ]
-
-  (* ----TODO TEST --- *)
+  
+  let gen_decode_sig {record_name; _ } = 
+    concat [
+      P.sprintf "val decode_%s : Protobuf_codec.Decoder.t -> %s" 
+        record_name record_name;
+      sp "(** [decode_%s decoder] decodes a [%s] value from [decoder] *)"
+        record_name record_name; 
+    ]
+  
 
   let gen_encode {record_name; fields } = 
     L.log "gen_encode record_name: %s\n" record_name; 
 
-    let gen_encode_field field_number payload_kind field_type = 
-      P.sprintf "\nPc.Encoder.key (%i, Pc.%s) encoder; " 
-        field_number (constructor_name @@ Encoding_util.string_of_payload_kind payload_kind) ^ 
-      match field_type with 
-      | User_defined t -> 
-        P.sprintf "\nPc.Encoder.nested (encode_%s x) encoder;" t 
-      | _ ->  
-        P.sprintf "\nencode_%s_as_%s x encoder;"
-          (string_of_field_type false field_type) 
-          (fname_of_payload_kind payload_kind) 
+    let gen_field ?indent v_name field_number payload_kind field_type = 
+      let s = concat [
+        sp "Pc.Encoder.key (%i, Pc.%s) encoder; " 
+          field_number (constructor_name @@ Encoding_util.string_of_payload_kind payload_kind);
+        match field_type with 
+        | User_defined t -> 
+          sp "Pc.Encoder.nested (encode_%s %s) encoder;" t v_name 
+        | _ ->  
+          sp "encode_%s_as_%s %s encoder;"
+            (string_of_field_type false field_type) 
+            (fname_of_payload_kind payload_kind) 
+            v_name ;
+      ] in 
+      match indent with 
+      | Some _ -> add_indentation 1 @@ s 
+      | None   -> s 
     in
 
-    let s = P.sprintf "let encode_%s v encoder = " record_name in 
-    s ^ add_indentation 1 @@ List.fold_left (fun s field -> 
-     L.log "gen_code field_name: %s\n" field.field_name;
-     let {
-       encoding_type;
-       field_type; 
-       field_name; 
-       is_option;
-     } = field in 
-     match encoding_type with 
-     | Regular_field {field_number; payload_kind } -> ( 
-       match is_option with
-       | false -> (s ^ 
-         P.sprintf "\nlet x = v.%s in " field_name ^ 
-         gen_encode_field field_number payload_kind field_type
-       )
-       | true -> (s ^ 
-         P.sprintf "\nmatch v.%s with " field_name ^ 
-         P.sprintf "\n| Some x -> (%s" 
-           (add_indentation 1 @@ gen_encode_field field_number payload_kind field_type) ^ 
-         P.sprintf "\n)" ^ 
-         P.sprintf "\n| None -> ();"
-       )
-     )
-     | One_of {constructors; variant_name} -> (  
-       s ^ P.sprintf "\nmatch v.%s with" field_name ^ 
-       List.fold_left (fun s {encoding_type; field_type; field_name; } ->
-         match encoding_type with 
-         | Regular_field {field_number; payload_kind} -> (
-             s ^ P.sprintf "\n| %s x -> (" field_name ^ 
-             (add_indentation 1 @@ gen_encode_field field_number payload_kind field_type) ^ 
-             "\n)" 
-         )
-         | _ -> raise @@ E.programmatic_error E.Recursive_one_of
-       ) "" constructors ^ ";"  (* one of fields *) 
-     )                          (* one of        *)
-    ) "" fields ^               (* record fields *) 
-    "\n()"
+    concat [
+      P.sprintf "let encode_%s v encoder = " record_name;
+      add_indentation 1 @@ concat @@ List.map (fun field -> 
+        L.log "gen_code field_name: %s\n" field.field_name;
+
+        let { encoding_type; field_type; field_name; is_option; } = field in 
+        match encoding_type with 
+        | Regular_field {field_number; payload_kind } -> ( 
+          if not is_option 
+          then (
+            let v_name = P.sprintf "v.%s" field_name in 
+            gen_field v_name field_number payload_kind field_type
+          )
+          else concat [
+            sp "match v.%s with " field_name;
+            sp "| Some x -> (%s)"
+            (gen_field ~indent:() "x" field_number payload_kind field_type) ;
+            sp "| None -> ();" ;
+          ]
+        )
+        | One_of {constructors; variant_name = _} -> (  
+          concat [
+            sp "match v.%s with" field_name;
+            concat @@ List.map (fun {encoding_type; field_type; field_name; is_option = _ } ->
+              match encoding_type with 
+              | Regular_field {field_number; payload_kind} -> (
+                  let encode_field  = gen_field ~indent:() "x" field_number payload_kind field_type in 
+                  sp "| %s x -> (%s\n)" field_name encode_field
+              )
+              | _ -> raise @@ E.programmatic_error E.Recursive_one_of
+            ) constructors;
+            ";";
+          ]
+        )           (* one of        *)
+      ) fields;  (* record fields *) 
+    "\n  ()"
+    ]
   
   let gen_encode_sig {record_name; _ } = 
-    P.sprintf "val encode_%s : %s -> Protobuf_codec.Encoder.t -> unit"
-      record_name
-      record_name 
-end 
+    concat [
+      P.sprintf "val encode_%s : %s -> Protobuf_codec.Encoder.t -> unit"
+        record_name
+        record_name;
+      sp "(** [encode_%s v encoder] encodes [v] with the given [encoder] *)" 
+        record_name  
+    ]
+  
+  let gen_string_of {record_name; fields } = 
+    L.log "gen_string_of, record_name: %s\n" record_name; 
+
+    let gen_field field_name field_type = 
+      match field_type with 
+      | User_defined t -> 
+        P.sprintf "P.sprintf \"\\n%s: %%s\" @@ string_of_%s x" field_name t  
+      | _ ->  
+        P.sprintf "P.sprintf \"\\n%s: %%%c\" x"  
+          field_name 
+          (printf_char_of_field_type field_type)
+    in
+
+    concat [
+      P.sprintf "let string_of_%s v = " record_name;
+      "\n  add_indentation 1 @@ String.concat \"\" [";
+      add_indentation 2 @@ concat @@ List.map (fun field -> 
+        L.log "gen_string_of field_name: %s\n" field.field_name;
+       
+        let { field_type; field_name; is_option; encoding_type} = field in 
+        match encoding_type with 
+        | Regular_field _ -> ( 
+          if not is_option 
+          then  
+            let field_string_of = gen_field field_name field_type in 
+            sp "(let x = v.%s in %s);" field_name field_string_of 
+          else  
+            concat [
+              sp "(match v.%s with " field_name;
+              sp "| Some x -> (%s)"  (gen_field field_name field_type);
+              sp "| None -> \"\\n%s: None\");" field_name;
+            ]
+        )
+        | One_of {constructors; variant_name = _} -> (
+          concat [
+            sp "(match v.%s with" field_name;
+            concat @@ List.map (fun {encoding_type; field_type; field_name; is_option = _ } ->
+              match encoding_type with 
+              | Regular_field {field_number =_ ; payload_kind=_} -> (
+                let field_string_of = gen_field field_name field_type in 
+                sp "| %s x -> (%s)" field_name (add_indentation 1 field_string_of)
+              )
+              | _ -> raise @@ E.programmatic_error E.Recursive_one_of
+            ) constructors ;
+            "\n);"       (* one of fields *) 
+          ]
+        )                (* one of        *)
+      ) fields;          (* record fields *) 
+      "\n  ]";
+    ]
+
+  let gen_string_of_sig {record_name; fields = _ } = 
+    concat [
+      P.sprintf "val string_of_%s : %s -> string " record_name record_name;
+      sp "(** [string_of_%s v] returns a debugging string for [v] *)" record_name;
+    ]
+
+end  

@@ -29,4 +29,4 @@ let payload_kind_of_field_type = function
   | Astc.Field_type_bool  -> Varint false 
   | Astc.Field_type_string  -> Bytes
   | Astc.Field_type_bytes  -> Bytes
-  | Astc.Field_type_message i -> Bytes 
+  | Astc.Field_type_message _ -> Bytes 

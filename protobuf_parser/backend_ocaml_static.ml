@@ -1,6 +1,11 @@
 
 let prefix_payload_to_ocaml_t  = {|
 
+module P  = Printf
+  
+let add_indentation n s = 
+  Str.global_replace (Str.regexp "^" ) (String.make (n * 2) ' ') s  
+
 module Pc = Protobuf_codec 
 
 let decode_varint_as_int decoder = 

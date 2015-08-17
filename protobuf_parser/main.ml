@@ -63,7 +63,8 @@ let () =
       s ^ 
       BO.Codegen.gen_record_type r ^ "\n\n" ^ 
       BO.Codegen.gen_decode r ^ "\n\n" ^  
-      BO.Codegen.gen_encode r ^ "\n\n" 
+      BO.Codegen.gen_encode r ^ "\n\n" ^  
+      BO.Codegen.gen_string_of r ^ "\n\n" 
     | BO.Variant v -> 
       s ^ 
       BO.Codegen.gen_variant_type v ^ "\n\n"
@@ -74,7 +75,8 @@ let () =
       s ^ 
       BO.Codegen.gen_record_type r ^ "\n\n" ^ 
       BO.Codegen.gen_decode_sig  r ^ "\n\n" ^  
-      BO.Codegen.gen_encode_sig  r ^ "\n\n" 
+      BO.Codegen.gen_encode_sig  r ^ "\n\n" ^  
+      BO.Codegen.gen_string_of_sig r ^ "\n\n" 
     | BO.Variant v -> 
       s ^ 
       BO.Codegen.gen_variant_type v ^ "\n\n"
