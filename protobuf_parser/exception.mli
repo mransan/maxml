@@ -1,6 +1,5 @@
 
 type programmatic_error =
-  | Recursive_one_of 
   | Invalid_string_split 
   | Unexpect_field_type 
 

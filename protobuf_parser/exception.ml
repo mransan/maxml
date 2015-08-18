@@ -4,12 +4,10 @@
 module P = Printf
 
 type programmatic_error =
-  | Recursive_one_of 
   | Invalid_string_split 
   | Unexpect_field_type 
 
 let string_of_programmatic_error = function 
-  | Recursive_one_of     -> "recursive one of"
   | Invalid_string_split -> "string split error"
   | Unexpect_field_type  -> "unexpected field type"
 
