@@ -69,22 +69,45 @@ let encode_bytes_as_bytes  = Pc.Encoder.bytes
 let prefix_decode_f = {|
 
 let rec decode decoder mappings values = 
+  let insert number v = 
+    try 
+      let _ = List.assoc number values in 
+      List.map (function 
+        | (i, v') when i = number -> (i, v::v')
+        | x -> x 
+      ) values 
+    with Not_found -> (number , v::[])::values
+  in
+      
   match Pc.Decoder.key decoder with 
   | None -> values 
   | Some (number, payload_kind) -> (
     try 
       let mapping = List.assoc number mappings in 
-      decode decoder mappings ((number, mapping decoder) :: values) 
+      decode decoder mappings (insert number (mapping decoder)) 
     with | Not_found -> values 
   )
 
-let required number l = 
-  List.assoc number l 
+let required number l f = 
+  try 
+    match List.assoc number l with 
+    | []     -> failwith (P.sprintf "field %i missing" number)
+    | hd::_ -> f hd
+    (** TODO Improve *) 
+  with Not_found -> failwith (P.sprintf "field %i missing" number)
 
 let optional number l f = 
   try 
-    Some (f @@ List.assoc number l) 
-  with | Not_found -> None 
+    match List.assoc number l with 
+    | []     -> None
+    | hd::_ -> Some (f hd)
+    (** TODO Improve *) 
+  with Not_found -> None 
+
+let list_ number l f = 
+  try 
+    List.map f @@ List.rev @@ List.assoc number l
+  with Not_found -> []
 
 external identity: 'a -> 'a = "%identity"
 
