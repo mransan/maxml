@@ -26,6 +26,12 @@ Couple create_test_couple() {
         t.set_number(1111111);
     }
 
+    for(std::size_t i=0; i<2; ++i) {
+        Person_TelNumber& cn = *cp.add_contact_numbers();
+        cn.set_area_code(917);
+        cn.set_number   (123450 + i);
+    }
+
     return cp;
 }
 

@@ -39,7 +39,13 @@ let decode_ref_data () = {
       T.tel_number = Some {T.area_code = 917; T.number = 1111111};
       T.employment = T.Employed_by "INRIA";
     };
-    T.contact_number = None;
+    T.contact_numbers = {
+      T.area_code = 917;
+      T.number    = 123450;
+    } :: {
+      T.area_code = 917;
+      T.number    = 123451;
+    } :: []
   } 
 
 let decode () = 

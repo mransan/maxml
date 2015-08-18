@@ -19,5 +19,5 @@ message Person {
 message Couple {
     required Person p1 = 1;
     required Person p2 = 2; 
-    optional Person.TelNumber contact_number = 3;
+    repeated Person.TelNumber contact_numbers = 3;
 }
