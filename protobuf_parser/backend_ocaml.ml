@@ -49,28 +49,34 @@ let string_of_field_type type_qualifier field_type =
   | Option       -> s ^ " option"
   | List         -> s ^ " list"
 
-type encoding_type = 
-  | Regular_field of {
-    field_number:int ; 
-    payload_kind:Encoding_util.payload_kind; 
-  }
-  | One_of of variant  
+type field_encoding = {
+  field_number:int; 
+  payload_kind:Encoding_util.payload_kind; 
+}
 
-and field = {
+type record_encoding_type = 
+  | Regular_field of field_encoding
+  | One_of        of variant  
+
+(** the field is parametrized by the encoding_type with could either 
+    [field_encoding] or [record_encoding_type] depending 
+    if the field is used in a variant or record type
+ *) 
+and 'a field = {
   field_type : field_type; 
   field_name : field_name; 
-  type_qualifier :type_qualifier; 
-  encoding_type : encoding_type;
+  type_qualifier : type_qualifier; 
+  encoding_type : 'a;
 }
 
 and record = {
   record_name: string; 
-  fields : field list; 
+  fields : record_encoding_type field list; 
 }
 
 and variant = {
   variant_name : string; 
-  constructors : field list;
+  constructors : field_encoding field list;
 }
 
 type type_ = 
@@ -137,7 +143,7 @@ let get_type_name_from_all_messages field_message_scope all_messages i =
     type_name_of_message field_message_scope message_scope message_name
   with | Not_found -> failwith "Programmatic error could not find type"
 
-let compile_field ?as_constructor type_qualifier message_scope all_messages field = 
+let compile_field ?as_constructor f type_qualifier message_scope all_messages field = 
   let field_name = Astc_util.field_name field in 
   let encoding_type = Astc_util.field_type field in 
 
@@ -173,7 +179,7 @@ let compile_field ?as_constructor type_qualifier message_scope all_messages fiel
     field_type; 
     field_name; 
     type_qualifier; 
-    encoding_type = Regular_field {
+    encoding_type = f {
       field_number = Astc_util.field_number field;
       payload_kind;
     }; 
@@ -186,7 +192,7 @@ let compile_oneof all_messages message_scope outer_message_name {Astc.oneof_name
     (* TODO fix hard coding the empty_scope and rather
         pass down the appropriate scope.
       *)
-    compile_field ~as_constructor:() No_qualifier message_scope all_messages field 
+    compile_field ~as_constructor:() (fun x -> x) No_qualifier message_scope all_messages field 
   ) oneof_fields in 
   {variant_name; constructors; }
 
@@ -211,7 +217,7 @@ let compile
         | `Required -> No_qualifier
         | `Repeated -> List
       in 
-      (variants, (compile_field type_qualifier message_scope all_messages f)::fields)
+      (variants, (compile_field (fun x -> Regular_field x) type_qualifier message_scope all_messages f)::fields)
     )
     | Astc.Message_oneof_field f -> (
       let variant = compile_oneof all_messages message_scope message_name f in 
@@ -299,23 +305,20 @@ module Codegen = struct
         )
         | One_of {variant_name ; constructors; } -> (
           concat @@ List.map (fun {encoding_type; field_type; field_name; type_qualifier = _ } -> 
-            match encoding_type with
-            | Regular_field {field_number; payload_kind } -> (
-              let decoding  =  match field_type with 
-                | User_defined t -> 
-                  P.sprintf "(fun d -> `%s (%s (decode_%s (Pc.Decoder.nested d))))" 
-                    (constructor_name variant_name) field_name t  
-                | _ -> 
-                  let field_type = string_of_field_type No_qualifier field_type in 
-                  P.sprintf "(fun d -> `%s (%s (decode_%s_as_%s d)))" 
-                    (constructor_name variant_name)
-                    field_name
-                    (fname_of_payload_kind payload_kind)
-                    field_type 
-              in 
-              sp "  (%i, %s);" field_number decoding 
-            )            (* Regular_field *)
-            | One_of _ -> raise @@ E.programmatic_error E.Recursive_one_of
+            let {field_number; payload_kind;} = encoding_type in 
+            let decoding  =  match field_type with 
+              | User_defined t -> 
+                P.sprintf "(fun d -> `%s (%s (decode_%s (Pc.Decoder.nested d))))" 
+                  (constructor_name variant_name) field_name t  
+              | _ -> 
+                let field_type = string_of_field_type No_qualifier field_type in 
+                P.sprintf "(fun d -> `%s (%s (decode_%s_as_%s d)))" 
+                  (constructor_name variant_name)
+                  field_name
+                  (fname_of_payload_kind payload_kind)
+                  field_type 
+            in 
+            sp "  (%i, %s);" field_number decoding 
           ) constructors (* All variant constructors *) 
         )                (* One_of record field *)    
       ) fields ;
@@ -352,10 +355,8 @@ module Codegen = struct
                 field_name field_number constructor
         )
         | One_of {constructors; variant_name} -> 
-            let all_numbers = List.fold_left (fun s {encoding_type; _ } -> 
-              match encoding_type with
-              | Regular_field {field_number; _ } -> s ^ (P.sprintf "%i;" field_number)
-              | One_of _ -> raise @@ E.programmatic_error E.Recursive_one_of
+            let all_numbers = List.fold_left (fun s {encoding_type= {field_number; _ } ; _ } -> 
+              s ^ (P.sprintf "%i;" field_number)
             ) "[" constructors in 
             let all_numbers = all_numbers ^ "]" in 
             sp "%s = (match oneof %s l with | `%s __v -> __v | _ -> e());"
@@ -423,14 +424,10 @@ module Codegen = struct
         | One_of {constructors; variant_name = _} -> (  
           concat [
             sp "match v.%s with" field_name;
-            concat @@ List.map (fun {encoding_type; field_type; field_name;
-            type_qualifier= _ } ->
-              match encoding_type with 
-              | Regular_field {field_number; payload_kind} -> (
-                  let encode_field  = gen_field ~indent:() "x" field_number payload_kind field_type in 
-                  sp "| %s x -> (%s\n)" field_name encode_field
-              )
-              | _ -> raise @@ E.programmatic_error E.Recursive_one_of
+            concat @@ List.map (fun {encoding_type; field_type; field_name; type_qualifier= _ } ->
+              let {field_number; payload_kind} = encoding_type in 
+                let encode_field  = gen_field ~indent:() "x" field_number payload_kind field_type in 
+                sp "| %s x -> (%s\n)" field_name encode_field
             ) constructors;
             ";";
           ]
@@ -490,14 +487,10 @@ module Codegen = struct
         | One_of {constructors; variant_name = _} -> (
           concat [
             sp "(match v.%s with" field_name;
-            concat @@ List.map (fun {encoding_type; field_type; field_name;
+            concat @@ List.map (fun {encoding_type=_; field_type; field_name;
             type_qualifier= _ } ->
-              match encoding_type with 
-              | Regular_field {field_number =_ ; payload_kind=_} -> (
-                let field_string_of = gen_field field_name field_type in 
-                sp "| %s x -> (%s)" field_name (add_indentation 1 field_string_of)
-              )
-              | _ -> raise @@ E.programmatic_error E.Recursive_one_of
+              let field_string_of = gen_field field_name field_type in 
+              sp "| %s x -> (%s)" field_name (add_indentation 1 field_string_of)
             ) constructors ;
             "\n);"       (* one of fields *) 
           ]

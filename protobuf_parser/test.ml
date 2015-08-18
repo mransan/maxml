@@ -659,9 +659,9 @@ let () =
         variant_name  = "m1_o1"; 
         constructors = [
           {field_type = Int; field_name = "Intv"; type_qualifier = No_qualifier;
-           encoding_type = Regular_field {field_number = 1; payload_kind = Encoding_util.Varint false}};
+           encoding_type = {field_number = 1; payload_kind = Encoding_util.Varint false}};
           {field_type = String; field_name = "Stringv"; type_qualifier = No_qualifier;
-           encoding_type = Regular_field {field_number = 2; payload_kind = Encoding_util.Bytes}};
+           encoding_type = {field_number = 2; payload_kind = Encoding_util.Bytes}};
         ];
       }) in
     assert(BO.Variant variant = List.nth ocaml_types 0);
