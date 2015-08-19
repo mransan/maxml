@@ -94,6 +94,8 @@ int main(int argc, char const* const argv[]) {
         }
         else {
             std::cout << "C++: -- Good --" 
+                      << std::endl
+                      << cp.DebugString()
                       << std::endl;
             return 0;
         }
