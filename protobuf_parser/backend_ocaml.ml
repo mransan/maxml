@@ -58,10 +58,6 @@ type record_encoding_type =
   | Regular_field of field_encoding
   | One_of        of variant  
 
-(** the field is parametrized by the encoding_type with could either 
-    [field_encoding] or [record_encoding_type] depending 
-    if the field is used in a variant or record type
- *) 
 and 'a field = {
   field_type : field_type; 
   field_name : field_name; 
@@ -192,7 +188,7 @@ let compile_oneof all_messages message_scope outer_message_name {Astc.oneof_name
     (* TODO fix hard coding the empty_scope and rather
         pass down the appropriate scope.
       *)
-    compile_field ~as_constructor:() (fun x -> x) No_qualifier message_scope all_messages field 
+    compile_field ~as_constructor:() (fun x -> x)  No_qualifier message_scope all_messages field 
   ) oneof_fields in 
   {variant_name; constructors; }
 
@@ -253,8 +249,6 @@ module Codegen = struct
   (** [add_indentation n s] adds a multiple of 2 spaces indentation to [s] *)
 
 
-  (** [gen_record_type r] generate the OCaml type declaration for [r]
-   *)
   let gen_record_type {record_name; fields } = 
     concat [
       P.sprintf "type %s = {" record_name;
@@ -265,8 +259,6 @@ module Codegen = struct
       "\n}"
     ]
   
-  (** [gen_variant_type v] generate the OCaml type declaration for [v]
-   *)
   let gen_variant_type {variant_name; constructors } = 
     concat [
       P.sprintf "type %s =" variant_name; 
@@ -326,10 +318,10 @@ module Codegen = struct
     ]
 
 
-  let gen_decode ({record_name; fields } as field) = 
+  let gen_decode ({record_name; fields } as record) = 
     String.concat "" [
       P.sprintf "let decode_%s =" record_name;
-      sp "%s" (add_indentation 1 @@ gen_mappings field); 
+      sp "%s" (add_indentation 1 @@ gen_mappings record); 
       sp "  in";
       sp "  (fun d ->"; 
       sp "    let l = decode d %s_mappings []  in  {" record_name;
