@@ -8,47 +8,35 @@ PROTOC=../../../install/build/bin/protoc
 ML_PROTOC=../ml-protoc
 
 
-test01.pb.cc: test01.proto
-	$(PROTOC) --cpp_out ./ test01.proto
+%.pb.cc: %.proto
+	$(PROTOC) --cpp_out ./ $<
 
-test01_cpp.tsk: main01_cpp.cpp test01.pb.cc 
+%_cpp.tsk: %_cpp.cpp %.pb.cc 
 	g++ -I ./  -I $(PB_HINC) $? -L $(PB_LINC) -l protobuf -o $@
 
-test01_types.ml test01_types.mli : test01.proto
-	$(ML_PROTOC) -debug -out ./test01_types test01.proto
+%_types.ml %_types.mli : %.proto
+	$(ML_PROTOC) -debug -out ./$*_types $<
 
-test01_ml.tsk: test01_types.mli test01_types.ml main01_ml.ml 
+%_ml.tsk: %_types.mli %_types.ml %_ml.ml 
 	$(OCAMLOPT) -I $(PBC_INC) str.cmxa protobuf_codec.cmxa $? -o $@ 
 
-.PHONY: all clean test01 
+.PHONY: all clean 
 
-test01: test01_ml.tsk test01_cpp.tsk 
-	./test01_cpp.tsk encode
-	./test01_ml.tsk decode
-	./test01_ml.tsk encode
-	./test01_cpp.tsk decode
+test%: test%_ml.tsk test%_cpp.tsk 
+	./test$*_cpp.tsk encode
+	./test$*_ml.tsk decode
+	./test$*_ml.tsk encode
+	./test$*_cpp.tsk decode
 
-test02.pb.cc: test02.proto
-	$(PROTOC) --cpp_out ./ test02.proto
 
-test02_cpp.tsk: main02_cpp.cpp test02.pb.cc 
-	g++ -I ./  -I $(PB_HINC) $? -L $(PB_LINC) -l protobuf -o $@
+testCompat: test04_ml.tsk test03_cpp.tsk 
+	./test03_cpp.tsk encode
+	./test04_ml.tsk decode
+	./test04_ml.tsk encode
+	./test03_cpp.tsk decode
 
-test02_types.ml test02_types.mli : test02.proto
-	$(ML_PROTOC) -debug -out ./test02_types test02.proto
+all: test01 test02 testCompat
 
-test02_ml.tsk: test02_types.mli test02_types.ml main02_ml.ml 
-	$(OCAMLOPT) -I $(PBC_INC) str.cmxa protobuf_codec.cmxa $? -o $@ 
-
-.PHONY: all clean test02 
-
-test02: test02_ml.tsk test02_cpp.tsk 
-	./test02_cpp.tsk encode
-	./test02_ml.tsk decode
-	./test02_ml.tsk encode
-	./test02_cpp.tsk decode
-
-all: test01 test02
 
 clean:
 	rm -f test0*.pb*
@@ -56,5 +44,3 @@ clean:
 	rm -f *.tsk
 	rm -f *.data
 	rm -f *.o
-
-all: test01

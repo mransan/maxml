@@ -68,58 +68,56 @@ let encode_bytes_as_bytes  = Pc.Encoder.bytes
 
 let prefix_decode_f = {|
 
-let rec decode decoder mappings values = 
+let decode decoder mappings values = 
   let insert number v = 
-    try 
-      let _ = List.assoc number values in 
-      List.map (function 
-        | (i, v') when i = number -> (i, v::v')
-        | x -> x 
-      ) values 
-    with Not_found -> (number , v::[])::values
-  in
-      
-  match Pc.Decoder.key decoder with 
-  | None -> values 
-  | Some (number, payload_kind) -> (
-    try 
-      let mapping = List.assoc number mappings in 
-      decode decoder mappings (insert number (mapping decoder)) 
-    with | Not_found -> values 
-  )
+    let v' = Array.unsafe_get values number in 
+    Array.unsafe_set values number (v::v')
+  in 
+  let rec loop () = 
+    match Pc.Decoder.key decoder with 
+    | None -> values 
+    | Some (number, payload_kind) -> (
+      try 
+        let mapping = List.assoc number mappings in 
+        insert number (mapping decoder);
+        loop () 
+      with 
+      | Not_found ->  (
+        Pc.Decoder.skip decoder payload_kind; 
+        values   (* unkown fields are ignored *) 
+      )
+    )
+  in 
+  loop () 
 
-let required number l f = 
-  try 
-    match List.assoc number l with 
-    | []     -> failwith (P.sprintf "field %i missing" number)
-    | hd::_ -> f hd
-    (** TODO Improve *) 
-  with Not_found -> failwith (P.sprintf "field %i missing" number)
+let required number a f = 
+  match Array.unsafe_get a number with 
+  | []     -> failwith (P.sprintf "field %i missing" number)
+  | hd::_  -> f hd
+  (* TODO Improve *) 
 
-let optional number l f = 
-  try 
-    match List.assoc number l with 
-    | []     -> None
-    | hd::_ -> Some (f hd)
-    (** TODO Improve *) 
-  with Not_found -> None 
+let optional number a f = 
+  match Array.unsafe_get a number with 
+  | []     -> None
+  | hd::_ -> Some (f hd)
+  (* TODO Improve *) 
 
-let list_ number l f = 
-  try 
-    List.map f @@ List.rev @@ List.assoc number l
-  with Not_found -> []
+let list_ number a f = 
+  List.map f @@ List.rev @@ Array.unsafe_get a number
 
 external identity: 'a -> 'a = "%identity"
 
-let oneof numbers l = 
+let oneof numbers a = 
   let ret = List.fold_left (fun x number -> 
     match x with 
     | Some _ -> x 
-    | None   -> optional number l identity  
+    | None   -> optional number a identity  
  ) None numbers in 
  match ret with 
  | Some x -> x 
  | None -> failwith "None of oneof value could be found." 
+
+
 
 let e () = failwith "programmatic error" 
 |}

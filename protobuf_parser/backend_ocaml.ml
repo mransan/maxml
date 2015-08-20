@@ -317,6 +317,15 @@ module Codegen = struct
       "\n]";
     ]
 
+  let max_field_number fields = 
+    List.fold_left (fun max_so_far {encoding_type; _ } -> 
+      match encoding_type with
+      | Regular_field {field_number; _ } -> max max_so_far field_number 
+      | One_of {constructors; _ } -> 
+          List.fold_left (fun max_so_far {encoding_type = {field_number; _ } ; _ } -> 
+          max field_number max_so_far 
+      ) max_so_far constructors 
+    ) (- 1) fields
 
   let gen_decode ({record_name; fields } as record) = 
     String.concat "" [
@@ -324,7 +333,7 @@ module Codegen = struct
       sp "%s" (add_indentation 1 @@ gen_mappings record); 
       sp "  in";
       sp "  (fun d ->"; 
-      sp "    let l = decode d %s_mappings []  in  {" record_name;
+      sp "    let a = decode d %s_mappings (Array.make %i []) in {" record_name (max_field_number fields + 1);
       add_indentation 3 @@ concat @@ List.map (fun field -> 
         let {
           encoding_type;
@@ -337,13 +346,13 @@ module Codegen = struct
             let constructor = constructor_name (string_of_field_type No_qualifier field_type) in  
             match type_qualifier with
             | No_qualifier -> 
-              sp "%s = required %i l (function | `%s __v -> __v | _ -> e());"
+              sp "%s = required %i a (function | `%s __v -> __v | _ -> e());"
                 field_name field_number constructor
             | Option -> 
-              sp "%s = optional %i l (function | `%s __v -> __v | _ -> e());"
+              sp "%s = optional %i a (function | `%s __v -> __v | _ -> e());"
                 field_name field_number constructor
             | List -> 
-              sp "%s = list_ %i l (function | `%s __v -> __v | _ -> e());"
+              sp "%s = list_ %i a (function | `%s __v -> __v | _ -> e());"
                 field_name field_number constructor
         )
         | One_of {constructors; variant_name} -> 
@@ -351,7 +360,7 @@ module Codegen = struct
               s ^ (P.sprintf "%i;" field_number)
             ) "[" constructors in 
             let all_numbers = all_numbers ^ "]" in 
-            sp "%s = (match oneof %s l with | `%s __v -> __v | _ -> e());"
+            sp "%s = (match oneof %s a with | `%s __v -> __v | _ -> e());"
               field_name all_numbers (constructor_name variant_name)
       ) fields;
       sp "    }";
