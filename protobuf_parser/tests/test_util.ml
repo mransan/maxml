@@ -1,22 +1,28 @@
 
 module Pc = Protobuf_codec 
-
-let inc_size = 16 
+let time_f f = 
+  let t1 = Unix.gettimeofday () in 
+  let x  = f () in 
+  let t2 = Unix.gettimeofday () in 
+  (t2 -. t1), x 
 
 let get_binary_file_content file_name = 
   let ic     = open_in_bin file_name in 
-  let rec loop b offset remaining = 
-    match input ic b offset remaining with
-    | 0 -> (b, offset)
-    | i when i = remaining -> (
-      let b = Bytes.extend b 0 inc_size in 
-      loop b (offset + remaining) inc_size
-    )
-    | i -> (
-      (b, offset + i) 
-    ) 
-  in 
-  loop (Bytes.create inc_size) 0 inc_size
+  let s      = in_channel_length ic in 
+  let b      = Bytes.create s in 
+  let t1     = Unix.gettimeofday () in 
+
+  let offset = ref 0 in 
+  let remaining = ref s in 
+  while !offset <> s do 
+    let i = input ic b !offset ! remaining in 
+    offset:=(!offset + i); 
+    remaining:=(!remaining - i);
+  done; 
+  let t2 = Unix.gettimeofday () in 
+  let t  = (t2 -. t1) in 
+  Printf.printf "Read file : %f \n%!" t; 
+  b, s
   
 type mode = 
   | Encode 
@@ -37,14 +43,17 @@ let parse_args () =
   Arg.parse cmd_line_args anon_fun usage;
   mode_of_string !mode 
 
-let decode file_name f_decode f_to_string ref_data  = 
+let decode ?noprint file_name f_decode f_to_string ref_data  = 
   let buffer, size = get_binary_file_content file_name in 
   Printf.printf "Done reading data, size=%i\n" size ;
 
   let buffer = Bytes.sub buffer 0 size in 
   let decoder = Pc.Decoder.of_bytes buffer in 
   
-  let x = f_decode decoder in  
+  let t, x = time_f (fun () -> 
+    f_decode decoder 
+  ) in 
+  Printf.printf "Decode : %f \n%!" t; 
   if  x = ref_data 
   then (
     print_endline "ML: -- Good --"; 
@@ -52,7 +61,9 @@ let decode file_name f_decode f_to_string ref_data  =
   )
   else (
     print_endline "ML: -- Test Failed --";  
-    print_endline @@ f_to_string x;
+    match noprint with
+    | None -> print_endline @@ f_to_string x
+    | Some _ -> (); 
     exit 1
   )
 

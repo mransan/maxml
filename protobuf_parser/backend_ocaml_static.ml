@@ -73,22 +73,22 @@ let decode decoder mappings values =
     let v' = Array.unsafe_get values number in 
     Array.unsafe_set values number (v::v')
   in 
-  let rec loop () = 
+
+  let continue = ref true in 
+  while !continue do 
     match Pc.Decoder.key decoder with 
-    | None -> values 
+    | None -> continue := false
     | Some (number, payload_kind) -> (
       try 
         let mapping = List.assoc number mappings in 
         insert number (mapping decoder);
-        loop () 
       with 
       | Not_found ->  (
         Pc.Decoder.skip decoder payload_kind; 
-        values   (* unkown fields are ignored *) 
       )
     )
-  in 
-  loop () 
+  done;
+  values
 
 let required number a f = 
   match Array.unsafe_get a number with 
@@ -103,7 +103,7 @@ let optional number a f =
   (* TODO Improve *) 
 
 let list_ number a f = 
-  List.map f @@ List.rev @@ Array.unsafe_get a number
+  List.rev_map f @@ Array.unsafe_get a number
 
 external identity: 'a -> 'a = "%identity"
 

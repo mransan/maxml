@@ -20,15 +20,15 @@ test_util.cmx:test_util.ml
 	$(ML_PROTOC) -debug -out ./$*_types $<
 
 %_ml.tsk: test_util.cmx %_types.mli %_types.ml %_ml.ml 
-	$(OCAMLOPT) -I $(PBC_INC) str.cmxa protobuf_codec.cmxa $? -o $@ 
+	$(OCAMLOPT) -I $(PBC_INC) unix.cmxa str.cmxa protobuf_codec.cmxa $? -o $@ 
 
 .PHONY: all clean 
 
 test%: test%_ml.tsk test%_cpp.tsk 
-	./test$*_cpp.tsk encode
-	./test$*_ml.tsk decode
-	./test$*_ml.tsk encode
-	./test$*_cpp.tsk decode
+	time ./test$*_cpp.tsk encode
+	time ./test$*_ml.tsk decode
+	time ./test$*_ml.tsk encode
+	time ./test$*_cpp.tsk decode
 
 
 testCompat: test04_ml.tsk test03_cpp.tsk 

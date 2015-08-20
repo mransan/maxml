@@ -50,7 +50,7 @@ inline int check_argv(int argc, char const * const argv[]) {
 }
 
 template<typename T> 
-void validate_decode(T& message, std::string const& file_name) {
+void validate_decode(T& message, std::string const& file_name, bool print = true) {
     int rc = decode_from_file(message, file_name);
     if(rc) {
         std::cerr << "C++: Failed to decode" 
@@ -59,8 +59,10 @@ void validate_decode(T& message, std::string const& file_name) {
     }
     else {
         std::cout << "C++: -- Good --" 
-                  << std::endl
-                  << message.DebugString()
                   << std::endl;
+        if(print) {
+            std::cout << message.DebugString()
+                      << std::endl;
+        }
     }
 } 
