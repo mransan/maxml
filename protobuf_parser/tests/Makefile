@@ -7,6 +7,8 @@ PBC_INC=../../../install/build/lib/ocaml/site-lib/ocaml-protobuf/
 PROTOC=../../../install/build/bin/protoc 
 ML_PROTOC=../ml-protoc
 
+test_util.cmx:test_util.ml
+	$(OCAMLOPT) -I $(PBC_INC) -c $? 
 
 %.pb.cc: %.proto
 	$(PROTOC) --cpp_out ./ $<
@@ -17,7 +19,7 @@ ML_PROTOC=../ml-protoc
 %_types.ml %_types.mli : %.proto
 	$(ML_PROTOC) -debug -out ./$*_types $<
 
-%_ml.tsk: %_types.mli %_types.ml %_ml.ml 
+%_ml.tsk: test_util.cmx %_types.mli %_types.ml %_ml.ml 
 	$(OCAMLOPT) -I $(PBC_INC) str.cmxa protobuf_codec.cmxa $? -o $@ 
 
 .PHONY: all clean 
@@ -44,3 +46,4 @@ clean:
 	rm -f *.tsk
 	rm -f *.data
 	rm -f *.o
+	rm -f *.cm*
