@@ -1,8 +1,5 @@
 
-(** This module defines the Raw AST for the Protobuffer specification
-    
-    This is what is outputed by the parser.
- *)
+(** Protobuffer Parse tree *)
 
 (** field constant *) 
 type constant = 

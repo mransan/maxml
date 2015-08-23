@@ -65,15 +65,15 @@ let () =
     List.assoc "default" @@ parse Parser.field_options_ s  
   in 
   
-  assert (Ast.Constant_int 1    = test_default "[default = 1 ]"); 
-  assert (Ast.Constant_int (-1) = test_default "[default = -1]"); 
-  assert (Ast.Constant_string "hello" = test_default "[default = \"hello\"]"); 
-  assert (Ast.Constant_string "he'l'lo" = test_default "[default = \"he'l'lo\"]"); 
-  assert (Ast.Constant_string "he\"l\"lo" = test_default "[default = \"he\\\"l\\\"lo\"]"); 
-  assert (Ast.Constant_float 1.23 = test_default "[default = 1.23]"); 
-  assert (Ast.Constant_float (-. 1.23) = test_default "[default = -1.23]"); 
-  assert (Ast.Constant_bool true  = test_default "[default = true]"); 
-  assert (Ast.Constant_bool false = test_default "[default = false]"); 
+  assert (Pbpt.Constant_int 1    = test_default "[default = 1 ]"); 
+  assert (Pbpt.Constant_int (-1) = test_default "[default = -1]"); 
+  assert (Pbpt.Constant_string "hello" = test_default "[default = \"hello\"]"); 
+  assert (Pbpt.Constant_string "he'l'lo" = test_default "[default = \"he'l'lo\"]"); 
+  assert (Pbpt.Constant_string "he\"l\"lo" = test_default "[default = \"he\\\"l\\\"lo\"]"); 
+  assert (Pbpt.Constant_float 1.23 = test_default "[default = 1.23]"); 
+  assert (Pbpt.Constant_float (-. 1.23) = test_default "[default = -1.23]"); 
+  assert (Pbpt.Constant_bool true  = test_default "[default = true]"); 
+  assert (Pbpt.Constant_bool false = test_default "[default = false]"); 
 
   let () = 
     let field_options = parse Parser.field_options_ "[]" in 
@@ -86,7 +86,7 @@ let () =
 
   let () =
     let {
-      Ast.field_name; 
+      Pbpt.field_name; 
       field_type; 
       field_label; 
       field_options; 
@@ -100,7 +100,7 @@ let () =
   in
   let () =
     let {
-      Ast.field_name; 
+      Pbpt.field_name; 
       field_type; 
       field_label; 
       field_options; 
@@ -121,26 +121,26 @@ let () =
       }"
     in 
     let {
-      Ast.oneof_name; 
-      Ast.oneof_fields; 
+      Pbpt.oneof_name; 
+      Pbpt.oneof_fields; 
     } = parse Parser.oneof_ s in
     assert (oneof_name = "foo"); 
     assert (List.length oneof_fields = 2);
     let {
-      Ast.field_name; 
-      Ast.field_number; 
-      Ast.field_type; 
-      Ast.field_options; 
+      Pbpt.field_name; 
+      Pbpt.field_number; 
+      Pbpt.field_type; 
+      Pbpt.field_options; 
     } = List.nth oneof_fields 0 in 
     assert (field_name = "name"); 
     assert (field_type = "string"); 
     assert (field_number= 4); 
     assert (List.length field_options = 0); 
     let {
-      Ast.field_name; 
-      Ast.field_number; 
-      Ast.field_type; 
-      Ast.field_options; 
+      Pbpt.field_name; 
+      Pbpt.field_number; 
+      Pbpt.field_type; 
+      Pbpt.field_options; 
     } = List.nth oneof_fields 1 in 
     assert (field_name = "sub_message"); 
     assert (field_type = "SubMessage"); 
@@ -166,8 +166,8 @@ let () =
     Printf.printf "---- MESSAGE ----\n";
     *)
     let {
-      Ast.message_name; 
-      Ast.message_body;
+      Pbpt.message_name; 
+      Pbpt.message_body;
     } = parse Parser.message_ s in 
     assert (message_name  = "Outer");
     assert (List.length message_body= 4);
@@ -187,14 +187,14 @@ let () =
     Printf.printf "---- MESSAGE ----\n";
     *)
     let {
-      Ast.message_name; 
-      Ast.message_body;
+      Pbpt.message_name; 
+      Pbpt.message_body;
     } = parse Parser.message_ s in 
     assert (message_name  = "TestM");
     assert (List.length message_body= 2);
-    let (Ast.Message_enum {
-      Ast.enum_name;
-      Ast.enum_values; 
+    let (Pbpt.Message_enum {
+      Pbpt.enum_name;
+      Pbpt.enum_values; 
     }) = List.hd message_body in 
     assert ("TestE" = enum_name); 
     assert (2 = List.length enum_values);
@@ -211,16 +211,16 @@ let () =
     }"
     in 
     let m = parse Parser.message_ s in 
-    let all_types = Astc_util.compile_message_p1 Astc_util.empty_scope m in 
+    let all_types = Pbtt_util.compile_message_p1 Pbtt_util.empty_scope m in 
     assert (2 =List.length all_types); 
-    let (Astc.Enum {
-      Astc.enum_scope;
-      Astc.enum_name; 
-      Astc.enum_values
+    let (Pbtt.Enum {
+      Pbtt.enum_scope;
+      Pbtt.enum_name; 
+      Pbtt.enum_values
     }) = List.nth all_types 0 in 
     assert ("TestE" = enum_name); 
     assert (2 = List.length enum_values); 
-    assert ({Astc.namespaces = []; Astc.message_names = ["TestM"]} = enum_scope);
+    assert ({Pbtt.namespaces = []; Pbtt.message_names = ["TestM"]} = enum_scope);
     ()
   in
   let () = 
@@ -231,14 +231,14 @@ let () =
     }"
     in 
     let ast  = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in  
+    let all_messages = Pbtt_util.compile_message_p1 Pbtt_util.empty_scope ast in  
     assert (List.length all_messages = 1);
-    let (Astc.Message {
-      Astc.message_scope; 
-      Astc.message_name;
-      Astc.message_body; 
+    let (Pbtt.Message {
+      Pbtt.message_scope; 
+      Pbtt.message_name;
+      Pbtt.message_body; 
     }) = List.hd all_messages in 
-    assert (Astc_util.empty_scope = message_scope);
+    assert (Pbtt_util.empty_scope = message_scope);
     assert ("Test" = message_name); 
     assert (2 = List.length message_body); 
     
@@ -246,23 +246,23 @@ let () =
     let test_fields message_body = 
       let f1 = List.nth message_body 0 in 
       let f1 = match f1 with 
-        | Astc.Message_field f -> f
+        | Pbtt.Message_field f -> f
         | _ -> assert(false)
       in 
-      assert (Astc_util.field_name f1 = "ival"); 
-      assert (f1.Astc.field_type  = Astc.Field_type_int64);
-      assert (Astc_util.field_number f1 = 1); 
-      assert (None = f1.Astc.field_default); 
+      assert (Pbtt_util.field_name f1 = "ival"); 
+      assert (f1.Pbtt.field_type  = Pbtt.Field_type_int64);
+      assert (Pbtt_util.field_number f1 = 1); 
+      assert (None = f1.Pbtt.field_default); 
       
       let f2 = List.nth message_body 1 in 
       let f2 = match f2 with 
-        | Astc.Message_field f -> f
+        | Pbtt.Message_field f -> f
         | _ -> assert(false)
       in 
-      assert (Astc_util.field_name f2 = "sval"); 
-      assert (f2.Astc.field_type  = Astc.Field_type_string);
-      assert (Astc_util.field_number f2 = 2); 
-      assert (None = f2.Astc.field_default); 
+      assert (Pbtt_util.field_name f2 = "sval"); 
+      assert (f2.Pbtt.field_type  = Pbtt.Field_type_string);
+      assert (Pbtt_util.field_number f2 = 2); 
+      assert (None = f2.Pbtt.field_default); 
       ()
     in 
     test_fields message_body; 
@@ -275,28 +275,28 @@ let () =
     }"
     in 
     let ast  = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in  
+    let all_messages = Pbtt_util.compile_message_p1 Pbtt_util.empty_scope ast in  
     assert (List.length all_messages = 2);
-    let (Astc.Message {
-      Astc.message_scope; 
-      Astc.message_name;
-      Astc.message_body; 
+    let (Pbtt.Message {
+      Pbtt.message_scope; 
+      Pbtt.message_name;
+      Pbtt.message_body; 
     }) = List.hd all_messages in 
-    assert (1 = List.length message_scope.Astc.message_names);
+    assert (1 = List.length message_scope.Pbtt.message_names);
     assert ("Inner" = message_name); 
     assert (2 = List.length message_body); 
     test_fields message_body; 
     let expected_scope = {
-      Astc.namespaces = []; 
-      Astc.message_names = [ "Test" ] 
+      Pbtt.namespaces = []; 
+      Pbtt.message_names = [ "Test" ] 
     } in 
     assert(expected_scope = message_scope);
-    let (Astc.Message {
-      Astc.message_scope; 
-      Astc.message_name;
-      Astc.message_body; 
+    let (Pbtt.Message {
+      Pbtt.message_scope; 
+      Pbtt.message_name;
+      Pbtt.message_body; 
     }) = List.nth all_messages 1 in 
-    assert (Astc_util.empty_scope = message_scope);
+    assert (Pbtt_util.empty_scope = message_scope);
     assert ("Test" = message_name); 
     assert (0 = List.length message_body); 
     ()
@@ -308,26 +308,26 @@ let () =
     }"
     in 
     let ast  = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in  
+    let all_messages = Pbtt_util.compile_message_p1 Pbtt_util.empty_scope ast in  
     assert (List.length all_messages = 1);
-    let (Astc.Message {
-      Astc.message_scope; 
-      Astc.message_name;
-      Astc.message_body; 
+    let (Pbtt.Message {
+      Pbtt.message_scope; 
+      Pbtt.message_name;
+      Pbtt.message_body; 
     }) = List.hd all_messages in 
-    assert (Astc_util.empty_scope  = message_scope);
+    assert (Pbtt_util.empty_scope  = message_scope);
     assert ("Test" = message_name); 
     assert (1 = List.length message_body); 
     let f1 = List.nth message_body 0 in 
-    let f1 = match f1 with | Astc.Message_field f -> f | _ -> assert(false) in 
-    assert ("mval" = Astc_util.field_name f1); 
-    assert (1 = Astc_util.field_number f1); 
+    let f1 = match f1 with | Pbtt.Message_field f -> f | _ -> assert(false) in 
+    assert ("mval" = Pbtt_util.field_name f1); 
+    assert (1 = Pbtt_util.field_number f1); 
     let unresolved = {
-      Astc.scope     = ["Msg1";"Msg2"];
-      Astc.type_name = "SubMessage";
-      Astc.from_root = false;
+      Pbtt.scope     = ["Msg1";"Msg2"];
+      Pbtt.type_name = "SubMessage";
+      Pbtt.from_root = false;
     } in 
-    assert ((Astc.Field_type_type unresolved) = f1.Astc.field_type); 
+    assert ((Pbtt.Field_type_type unresolved) = f1.Pbtt.field_type); 
     ()
   in 
 
@@ -339,17 +339,17 @@ let () =
     }
     " in 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope  ast in 
+    let all_messages = Pbtt_util.compile_message_p1 Pbtt_util.empty_scope  ast in 
     assert (6 = List.length all_messages); 
-    let filtered = Astc_util.find_all_types_in_field_scope all_messages [] in 
+    let filtered = Pbtt_util.find_all_types_in_field_scope all_messages [] in 
     assert (1 = List.length filtered);
-    let filtered = Astc_util.find_all_types_in_field_scope all_messages ["M1"] in 
+    let filtered = Pbtt_util.find_all_types_in_field_scope all_messages ["M1"] in 
     assert (2 = List.length filtered);
-    let filtered = Astc_util.find_all_types_in_field_scope all_messages ["M1";"M2"] in 
+    let filtered = Pbtt_util.find_all_types_in_field_scope all_messages ["M1";"M2"] in 
     assert (1 = List.length filtered);
-    let filtered = Astc_util.find_all_types_in_field_scope all_messages ["M1";"M3"] in 
+    let filtered = Pbtt_util.find_all_types_in_field_scope all_messages ["M1";"M3"] in 
     assert (1 = List.length filtered);
-    let filtered = Astc_util.find_all_types_in_field_scope all_messages ["M1";"M3";"M31"] in 
+    let filtered = Pbtt_util.find_all_types_in_field_scope all_messages ["M1";"M3";"M31"] in 
     assert (1 = List.length filtered);
     ()
   in 
@@ -386,9 +386,9 @@ let () =
     }
     " in 
     let ast = parse Parser.message_ s in 
-    let all_types = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
+    let all_types = Pbtt_util.compile_message_p1 Pbtt_util.empty_scope ast in 
     ignore @@ List.map (function 
-      | Astc.Message m  -> Astc_util.compile_message_p2 all_types m) all_types; 
+      | Pbtt.Message m  -> Pbtt_util.compile_message_p2 all_types m) all_types; 
     ()
   in 
 
@@ -400,9 +400,9 @@ let () =
 
   let test_unresolved_msg s = 
     let ast = parse Parser.message_ s in 
-    let all_types = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
+    let all_types = Pbtt_util.compile_message_p1 Pbtt_util.empty_scope ast in 
     assert_unresolved (fun () -> 
-      ignore @@ List.map (function | Astc.Message m -> Astc_util.compile_message_p2 all_types m) all_types
+      ignore @@ List.map (function | Pbtt.Message m -> Pbtt_util.compile_message_p2 all_types m) all_types
     )
   in
 
@@ -454,8 +454,8 @@ let () =
   let test_duplicate s = 
     let ast = parse Parser.message_ s in 
     assert_duplicate (fun () -> 
-      let all_types = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
-      ignore @@ List.map (function |Astc.Message m -> Astc_util.compile_message_p2 all_types m) all_types
+      let all_types = Pbtt_util.compile_message_p1 Pbtt_util.empty_scope ast in 
+      ignore @@ List.map (function |Pbtt.Message m -> Pbtt_util.compile_message_p2 all_types m) all_types
     )
   in
   let () = 
@@ -587,32 +587,32 @@ let () =
   in 
   let () = 
     let message_scope = {
-      Astc.namespaces = ["ab"; "cd"]; 
-      Astc.message_names = ["foo"; "bar"] 
+      Pbtt.namespaces = ["ab"; "cd"]; 
+      Pbtt.message_names = ["foo"; "bar"] 
     } in 
     let message_name = "test" in 
     assert("Ab.Cd.foo_bar_test" 
-            = Backend_ocaml.type_name_of_message Astc_util.empty_scope message_scope message_name);
+            = Backend_ocaml.type_name_of_message Pbtt_util.empty_scope message_scope message_name);
     ()
   in 
   let () = 
     let message_scope = { 
-      Astc.namespaces = ["ab"; "cd"]; 
-      Astc.message_names = []; 
+      Pbtt.namespaces = ["ab"; "cd"]; 
+      Pbtt.message_names = []; 
     } in 
     let message_name = "test" in 
     assert("Ab.Cd.test" 
-           = Backend_ocaml.type_name_of_message Astc_util.empty_scope message_scope message_name);
+           = Backend_ocaml.type_name_of_message Pbtt_util.empty_scope message_scope message_name);
     ()
   in 
   let () = 
     let message_scope = {
-      Astc.message_names  = ["foo";"bar";]; 
-      Astc.namespaces = [];
+      Pbtt.message_names  = ["foo";"bar";]; 
+      Pbtt.namespaces = [];
     } in 
     let message_name = "test" in 
     assert("foo_bar_test" 
-           = Backend_ocaml.type_name_of_message Astc_util.empty_scope message_scope message_name);
+           = Backend_ocaml.type_name_of_message Pbtt_util.empty_scope message_scope message_name);
     ()
   in 
   (** TODO: Add test cases for when the field_message_scope is NOT empty
@@ -620,9 +620,9 @@ let () =
   let module BO = Backend_ocaml in 
   let compile_to_ocaml s = 
     let ast = parse Parser.message_ s in 
-    let all_types = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
+    let all_types = Pbtt_util.compile_message_p1 Pbtt_util.empty_scope ast in 
     let all_types = List.map (fun t -> 
-      Astc_util.compile_type_p2 all_types t
+      Pbtt_util.compile_type_p2 all_types t
     ) all_types in 
     List.flatten @@ List.map (fun t ->
       BO.compile all_types t 
@@ -780,8 +780,8 @@ let () =
     " in 
     let messages  = parse Parser.message_list_ s in 
     assert(2= List.length messages);
-    assert("M1" = (List.nth messages 0).Ast.message_name);
-    assert("M2" = (List.nth messages 1).Ast.message_name);
+    assert("M1" = (List.nth messages 0).Pbpt.message_name);
+    assert("M2" = (List.nth messages 1).Pbpt.message_name);
     ()
   in
   let () = 
@@ -791,10 +791,10 @@ let () =
     message M2 {}
     " in 
     let proto = parse Parser.proto_ s in 
-    assert(Some "my.proto" = proto.Ast.package);
-    assert(2= List.length proto.Ast.messages);
-    assert("M1" = (List.nth proto.Ast.messages 0).Ast.message_name);
-    assert("M2" = (List.nth proto.Ast.messages 1).Ast.message_name);
+    assert(Some "my.proto" = proto.Pbpt.package);
+    assert(2= List.length proto.Pbpt.messages);
+    assert("M1" = (List.nth proto.Pbpt.messages 0).Pbpt.message_name);
+    assert("M2" = (List.nth proto.Pbpt.messages 1).Pbpt.message_name);
     ()
   in
   let () = 
@@ -802,8 +802,8 @@ let () =
     ENUM1 = 1;
     " in 
     let ev = parse Parser.enum_value_ s in 
-    assert("ENUM1" = ev.Ast.enum_value_name);
-    assert(1       = ev.Ast.enum_value_int);
+    assert("ENUM1" = ev.Pbpt.enum_value_name);
+    assert(1       = ev.Pbpt.enum_value_int);
     ()
   in
   let () = 
@@ -811,8 +811,8 @@ let () =
     BLAH_12_BLAH = -99999;
     " in 
     let ev = parse Parser.enum_value_ s in 
-    assert("BLAH_12_BLAH" = ev.Ast.enum_value_name);
-    assert((-99999) = ev.Ast.enum_value_int);
+    assert("BLAH_12_BLAH" = ev.Pbpt.enum_value_name);
+    assert((-99999) = ev.Pbpt.enum_value_int);
     ()
   in
   let () = 
@@ -822,13 +822,13 @@ let () =
     EV2 = 2;
     }
     " in 
-    let ev1 = Ast_util.enum_value ~int_value:1 "EV1" in 
-    let ev2 = Ast_util.enum_value ~int_value:2 "EV2" in 
+    let ev1 = Pbpt_util.enum_value ~int_value:1 "EV1" in 
+    let ev2 = Pbpt_util.enum_value ~int_value:2 "EV2" in 
     let e   = parse Parser.enum_ s in 
-    assert("Test" = e.Ast.enum_name); 
-    assert(2 = List.length e.Ast.enum_values);
-    assert(ev1 = List.nth e.Ast.enum_values 0); 
-    assert(ev2 = List.nth e.Ast.enum_values 1); 
+    assert("Test" = e.Pbpt.enum_name); 
+    assert(2 = List.length e.Pbpt.enum_values);
+    assert(ev1 = List.nth e.Pbpt.enum_values 0); 
+    assert(ev2 = List.nth e.Pbpt.enum_values 1); 
     ()
   in
   print_endline "\n--- Good ---";

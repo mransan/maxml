@@ -1,6 +1,6 @@
-(** Module to define compiled Protobuffer messages. 
+(** Protobuffer Typed tree. 
 
-    We have a 2 phase compilation process. 
+    The typetree type is parametrized to allow for 2 phase compilation. 
  *)
 
 (** scope of the field type when the field is a message type. 
@@ -76,15 +76,15 @@ type 'a field_type =
     ['b] is for [field_label] to account for both normal and one of fields. 
   *)
 type ('a, 'b) field = {
-  field_parsed : 'b Ast.field; 
+  field_parsed : 'b Pbpt.field; 
   field_type : 'a field_type; 
-  field_default : Ast.constant option; 
+  field_default : Pbpt.constant option; 
 }
 
 (** oneof definition *)
 type 'a oneof = {
   oneof_name : string; 
-  oneof_fields : ('a, Ast.oneof_label) field list; 
+  oneof_fields : ('a, Pbpt.oneof_label) field list; 
 }
 
 (** type scope 
@@ -101,7 +101,7 @@ type type_scope = {
 (** item for the message body
  *)
 type 'a message_body_content = 
-  | Message_field       of ('a, Ast.field_label) field 
+  | Message_field       of ('a, Pbpt.field_label) field 
   | Message_oneof_field of 'a oneof 
 
 and 'a message = {

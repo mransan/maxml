@@ -106,13 +106,13 @@ let type_name_of_message field_message_scope message_scope message_name =
     (* TODO this is a brute force method which only works for 
         field which are in the same namespaces as their types. 
      *) 
-    if field_message_scope.Astc.namespaces = message_scope.Astc.namespaces 
+    if field_message_scope.Pbtt.namespaces = message_scope.Pbtt.namespaces 
     then {message_scope with 
-      Astc.namespaces = [] 
+      Pbtt.namespaces = [] 
     }
     else message_scope in  
 
-  let {Astc.namespaces; Astc.message_names} = message_scope in 
+  let {Pbtt.namespaces; Pbtt.message_names} = message_scope in 
 
   if empty namespaces && empty message_names 
   then S.lowercase_ascii message_name 
@@ -140,15 +140,15 @@ let type_name_of_message field_message_scope message_scope message_name =
 let get_type_name_from_all_messages field_message_scope all_types i = 
   let module S = String in 
   try 
-    let t = Astc_util.type_of_id all_types i  in 
-    let type_scope = Astc_util.type_scope_of_type t in 
-    let type_name  = Astc_util.type_name_of_type  t in 
+    let t = Pbtt_util.type_of_id all_types i  in 
+    let type_scope = Pbtt_util.type_scope_of_type t in 
+    let type_name  = Pbtt_util.type_name_of_type  t in 
     type_name_of_message field_message_scope type_scope type_name 
   with | Not_found -> failwith "Programmatic error could not find type"
 
 let compile_field ?as_constructor f type_qualifier message_scope all_types field = 
-  let field_name = Astc_util.field_name field in 
-  let encoding_type = Astc_util.field_type field in 
+  let field_name = Pbtt_util.field_name field in 
+  let encoding_type = Pbtt_util.field_type field in 
 
   let field_name = match as_constructor with
     | Some _ -> constructor_name field_name 
@@ -157,24 +157,24 @@ let compile_field ?as_constructor f type_qualifier message_scope all_types field
 
   let field_encoding = Encoding_util.encoding_of_field_type all_types field in 
   let field_type   = match encoding_type with
-    | Astc.Field_type_double  -> Float
-    | Astc.Field_type_float  ->  Float
-    | Astc.Field_type_int32  ->  Int
-    | Astc.Field_type_int64  ->  Int
-    | Astc.Field_type_uint32  -> Int
-    | Astc.Field_type_uint64 -> Int
-    | Astc.Field_type_sint32  -> Int
-    | Astc.Field_type_sint64  -> Int
-    | Astc.Field_type_fixed32  -> Int
-    | Astc.Field_type_fixed64  -> Int
-    | Astc.Field_type_sfixed32  -> 
+    | Pbtt.Field_type_double  -> Float
+    | Pbtt.Field_type_float  ->  Float
+    | Pbtt.Field_type_int32  ->  Int
+    | Pbtt.Field_type_int64  ->  Int
+    | Pbtt.Field_type_uint32  -> Int
+    | Pbtt.Field_type_uint64 -> Int
+    | Pbtt.Field_type_sint32  -> Int
+    | Pbtt.Field_type_sint64  -> Int
+    | Pbtt.Field_type_fixed32  -> Int
+    | Pbtt.Field_type_fixed64  -> Int
+    | Pbtt.Field_type_sfixed32  -> 
         raise @@ E.unsupported_field_type ~field_name ~field_type:"sfixed32" ~backend_name:"OCaml" () 
-    | Astc.Field_type_sfixed64 -> 
+    | Pbtt.Field_type_sfixed64 -> 
         raise @@ E.unsupported_field_type ~field_name ~field_type:"sfixed64" ~backend_name:"OCaml" () 
-    | Astc.Field_type_bool  -> Bool
-    | Astc.Field_type_string  -> String
-    | Astc.Field_type_bytes  -> Bytes
-    | Astc.Field_type_type id -> 
+    | Pbtt.Field_type_bool  -> Bool
+    | Pbtt.Field_type_string  -> String
+    | Pbtt.Field_type_bytes  -> Bytes
+    | Pbtt.Field_type_type id -> 
       let name = get_type_name_from_all_messages message_scope all_types id in 
       User_defined_type name 
   in 
@@ -185,8 +185,8 @@ let compile_field ?as_constructor f type_qualifier message_scope all_types field
     encoding_type = f field_encoding ; 
   }
 
-let compile_oneof all_types message_scope outer_message_name {Astc.oneof_name ; Astc.oneof_fields } = 
-  let {Astc.message_names; _ } = message_scope in 
+let compile_oneof all_types message_scope outer_message_name {Pbtt.oneof_name ; Pbtt.oneof_fields } = 
+  let {Pbtt.message_names; _ } = message_scope in 
   let variant_name = type_name (message_names @ [outer_message_name]) oneof_name in 
   let constructors = List.map (fun field -> 
     (* TODO fix hard coding the empty_scope and rather
@@ -197,33 +197,33 @@ let compile_oneof all_types message_scope outer_message_name {Astc.oneof_name ; 
   {variant_name; constructors; }
 
 let compile_message  
-  (all_types: Astc.resolved Astc.proto) 
-  (message: Astc.resolved Astc.message ) :
+  (all_types: Pbtt.resolved Pbtt.proto) 
+  (message: Pbtt.resolved Pbtt.message ) :
   type_ list   = 
 
   let {
-    Astc.message_scope;
-    Astc.message_name; 
-    Astc.message_body; 
-    Astc.id = _ ; 
+    Pbtt.message_scope;
+    Pbtt.message_name; 
+    Pbtt.message_body; 
+    Pbtt.id = _ ; 
   } = message in 
 
-  let {Astc.message_names; Astc.namespaces = _ } = message_scope in 
+  let {Pbtt.message_names; Pbtt.namespaces = _ } = message_scope in 
   let record_name = type_name message_names message_name in 
   let variants, fields = List.fold_left (fun (variants, fields) -> function
-    | Astc.Message_field f -> (
-      let type_qualifier = match Astc_util.field_label f with 
+    | Pbtt.Message_field f -> (
+      let type_qualifier = match Pbtt_util.field_label f with 
         | `Optional -> Option 
         | `Required -> No_qualifier
         | `Repeated -> List
       in 
       (variants, (compile_field (fun x -> Regular_field x) type_qualifier message_scope all_types f)::fields)
     )
-    | Astc.Message_oneof_field f -> (
+    | Pbtt.Message_oneof_field f -> (
       let variant = compile_oneof all_types message_scope message_name f in 
       let field   = {
         field_type =  User_defined_type (variant.variant_name); 
-        field_name =  record_field_name f.Astc.oneof_name;
+        field_name =  record_field_name f.Pbtt.oneof_name;
         type_qualifier = No_qualifier;
         encoding_type = One_of variant; 
       } in 
@@ -236,10 +236,10 @@ let compile_message
     fields = List.rev fields;
   } :: variants)
 
-let compile_enum {Astc.enum_name; Astc.enum_values; Astc.enum_scope; Astc.enum_id = _ } = 
-  let {Astc.message_names; Astc.namespaces = _ } = enum_scope in 
+let compile_enum {Pbtt.enum_name; Pbtt.enum_values; Pbtt.enum_scope; Pbtt.enum_id = _ } = 
+  let {Pbtt.message_names; Pbtt.namespaces = _ } = enum_scope in 
   let variant_name = type_name message_names enum_name in 
-  let constructors = List.map (fun {Astc.enum_value_name; Astc.enum_value_int} -> 
+  let constructors = List.map (fun {Pbtt.enum_value_name; Pbtt.enum_value_int} -> 
     (constructor_name enum_value_name,  enum_value_int)
   ) enum_values in 
   Const_variant {
@@ -248,8 +248,8 @@ let compile_enum {Astc.enum_name; Astc.enum_values; Astc.enum_scope; Astc.enum_i
   }
 
 let compile all_types = function 
-  | Astc.Message m -> compile_message all_types m 
-  | Astc.Enum    e -> [compile_enum e] 
+  | Pbtt.Message m -> compile_message all_types m 
+  | Pbtt.Enum    e -> [compile_enum e] 
 
 module Codegen = struct 
   module P = Printf
