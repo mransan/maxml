@@ -20,7 +20,7 @@ let string_of_payload_kind = function
   | Bits64   -> "bits64"
   | Bytes    -> "bytes"
 
-let payload_kind_of_field_type all_types (field:(Astc.resolved, 'a)Astc.field) = 
+let encoding_of_field_type all_types (field:(Astc.resolved, 'a)Astc.field) = 
   let pk, nested = match Astc_util.field_type field with 
     | Astc.Field_type_double  -> (Bits64,false)
     | Astc.Field_type_float  -> (Bits32 ,false)

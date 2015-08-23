@@ -11,7 +11,6 @@ type field_type =
   | Bool
   | User_defined_type of string 
 
-
 let printf_char_of_field_type = function
   | String    -> 's' 
   | Float     -> 'f'
@@ -49,7 +48,6 @@ let string_of_field_type type_qualifier field_type =
   | No_qualifier -> s 
   | Option       -> s ^ " option"
   | List         -> s ^ " list"
-
 
 type 'a ivariant= {
   variant_name : string; 
@@ -157,7 +155,7 @@ let compile_field ?as_constructor f type_qualifier message_scope all_types field
     | None   -> record_field_name field_name 
   in 
 
-  let field_encoding = Encoding_util.payload_kind_of_field_type all_types field in 
+  let field_encoding = Encoding_util.encoding_of_field_type all_types field in 
   let field_type   = match encoding_type with
     | Astc.Field_type_double  -> Float
     | Astc.Field_type_float  ->  Float
@@ -197,8 +195,6 @@ let compile_oneof all_types message_scope outer_message_name {Astc.oneof_name ; 
     compile_field ~as_constructor:() (fun x -> x)  No_qualifier message_scope all_types field 
   ) oneof_fields in 
   {variant_name; constructors; }
-
-
 
 let compile_message  
   (all_types: Astc.resolved Astc.proto) 
