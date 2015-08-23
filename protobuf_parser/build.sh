@@ -44,6 +44,6 @@ $OCAMLOPT -w +A -I $PBC_INC -c backend_ocaml_static.ml
 $OCAMLOPT -w +A-4 -I $PBC_INC -c backend_ocaml.mli 
 $OCAMLOPT -w +A-4 -I $PBC_INC -c backend_ocaml.ml 
 $OCAMLOPT -w +A-4 -I $PBC_INC -c main.ml 
-$OCAMLOPT  -I $PBC_INC -c test.ml 
+$OCAMLOPT -w -A-8-9 -I $PBC_INC -c test.ml 
 $OCAMLOPT  -I $PBC_INC -o test.tsk $CMXS test.cmx
 $OCAMLOPT -w +A-4 -I $PBC_INC -o ml-protoc $CMXS main.cmx

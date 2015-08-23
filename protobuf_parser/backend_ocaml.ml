@@ -132,14 +132,16 @@ let type_name_of_message field_message_scope message_scope message_name =
       "_" ^
       S.lowercase_ascii message_name 
 
-let get_type_name_from_all_messages field_message_scope all_messages i = 
+let get_type_name_from_all_messages field_message_scope all_types i = 
   let module S = String in 
   try 
-    let {Astc.message_scope; Astc.message_name; _ } = List.find (fun {Astc.id; _ } -> id = i) all_messages in 
-    type_name_of_message field_message_scope message_scope message_name
+    let t = List.find (fun t -> Astc_util.type_id_of_type t = i) all_types in 
+    let type_scope = Astc_util.type_scope_of_type t in 
+    let type_name  = Astc_util.type_name_of_type  t in 
+    type_name_of_message field_message_scope type_scope type_name 
   with | Not_found -> failwith "Programmatic error could not find type"
 
-let compile_field ?as_constructor f type_qualifier message_scope all_messages field = 
+let compile_field ?as_constructor f type_qualifier message_scope all_types field = 
   let field_name = Astc_util.field_name field in 
   let encoding_type = Astc_util.field_type field in 
 
@@ -168,7 +170,7 @@ let compile_field ?as_constructor f type_qualifier message_scope all_messages fi
     | Astc.Field_type_string  -> String
     | Astc.Field_type_bytes  -> Bytes
     | Astc.Field_type_message i -> User_defined ( 
-      get_type_name_from_all_messages message_scope all_messages i
+      get_type_name_from_all_messages message_scope all_types i
     )
   in 
   {
@@ -181,19 +183,19 @@ let compile_field ?as_constructor f type_qualifier message_scope all_messages fi
     }; 
   }
 
-let compile_oneof all_messages message_scope outer_message_name {Astc.oneof_name ; Astc.oneof_fields } = 
+let compile_oneof all_types message_scope outer_message_name {Astc.oneof_name ; Astc.oneof_fields } = 
   let {Astc.message_names; _ } = message_scope in 
   let variant_name = type_name (message_names @ [outer_message_name]) oneof_name in 
   let constructors = List.map (fun field -> 
     (* TODO fix hard coding the empty_scope and rather
         pass down the appropriate scope.
       *)
-    compile_field ~as_constructor:() (fun x -> x)  No_qualifier message_scope all_messages field 
+    compile_field ~as_constructor:() (fun x -> x)  No_qualifier message_scope all_types field 
   ) oneof_fields in 
   {variant_name; constructors; }
 
 let compile 
-  (all_messages: Astc.resolved Astc.message list) 
+  (all_types: Astc.resolved Astc.proto) 
   (message: Astc.resolved Astc.message ) :
   type_ list   = 
 
@@ -213,10 +215,10 @@ let compile
         | `Required -> No_qualifier
         | `Repeated -> List
       in 
-      (variants, (compile_field (fun x -> Regular_field x) type_qualifier message_scope all_messages f)::fields)
+      (variants, (compile_field (fun x -> Regular_field x) type_qualifier message_scope all_types f)::fields)
     )
     | Astc.Message_oneof_field f -> (
-      let variant = compile_oneof all_messages message_scope message_name f in 
+      let variant = compile_oneof all_types message_scope message_name f in 
       let field   = {
         field_type =  User_defined (variant.variant_name); 
         field_name =  record_field_name f.Astc.oneof_name;

@@ -7,6 +7,8 @@
 
 %token MESSAGE
 
+%token ENUM 
+
 %token PACKAGE
 
 %token RBRACE
@@ -32,6 +34,12 @@
 %start normal_field_ 
 %type <Ast.field_label Ast.field> normal_field_
 
+%start enum_value_ 
+%type <Ast.enum_value> enum_value_
+
+%start enum_
+%type <Ast.enum> enum_
+
 %start oneof_
 %type <Ast.oneof> oneof_
 
@@ -48,10 +56,12 @@
 
 field_options_ : field_options EOF {$1}  
 normal_field_  : normal_field  EOF {$1}
-oneof_         : oneof EOF         {$1} 
-message_       : message EOF       {$1} 
-message_list_  : message_list EOF  {$1} 
-proto_         : proto EOF         {$1} 
+enum_value_    : enum_value    EOF {$1}
+enum_          : enum          EOF {$1}
+oneof_         : oneof         EOF {$1} 
+message_       : message       EOF {$1} 
+message_list_  : message_list  EOF {$1} 
+proto_         : proto         EOF {$1} 
 
 
 /*
@@ -87,6 +97,7 @@ message_body_content :
   | normal_field { Ast_util.message_body_field  $1 }
   | oneof        { Ast_util.message_body_oneof_field $1 }
   | message      { Ast_util.message_body_sub $1 }
+  | enum         { Ast_util.message_body_enum $1 }
 
 oneof :
   ONE_OF IDENT LBRACE oneof_field_list RBRACE { 
@@ -138,4 +149,15 @@ constant :
     | _ -> failwith "invalid default value"
   }
   | STRING     { Ast.Constant_string $1 }; 
+
+
+enum:
+  | ENUM IDENT LBRACE enum_values RBRACE {Ast_util.enum ~enum_values:$4 $2 } 
+
+enum_values:
+  | enum_value               { $1::[] }
+  | enum_value enum_values   { $1::$2 } 
+
+enum_value : 
+  | IDENT EQUAL INT SEMICOLON { Ast_util.enum_value ~int_value:$3 $1 } 
 %%

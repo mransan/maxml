@@ -87,13 +87,13 @@ type 'a oneof = {
   oneof_fields : ('a, Ast.oneof_label) field list; 
 }
 
-(** message scope 
+(** type scope 
     
-    The scope of a message is defined by the package (defined in the 
+    The scope of a type (message or enum) is defined by the package (defined in the 
     top of the proto file as well as the messages above it since a 
     message definition can be nested
  *)
-type message_scope = {
+type type_scope = {
   namespaces : string list; 
   message_names : string list; 
 }
@@ -106,7 +106,25 @@ type 'a message_body_content =
 
 and 'a message = {
   id : int ; 
-  message_scope : message_scope;
+  message_scope : type_scope;
   message_name : string; 
   message_body : 'a message_body_content list; 
 }
+
+type enum_value = {
+  enum_value_name: string; 
+  enum_value_int : int;
+}
+
+type enum = {
+  enum_scope : type_scope;
+  enum_id   : int; 
+  enum_name : string; 
+  enum_values: enum_value list; 
+}
+
+type 'a proto_type = 
+  | Enum    of enum 
+  | Message of 'a message
+
+type 'a proto = 'a proto_type list 

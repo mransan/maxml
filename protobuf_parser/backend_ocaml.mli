@@ -62,7 +62,7 @@ type type_ =
 (** {2 Compilation } *) 
 
 val compile :
-  Astc.resolved Astc.message list ->
+  Astc.resolved Astc.proto ->
   Astc.resolved Astc.message -> 
   type_ list 
 
@@ -119,5 +119,5 @@ val type_name : string list -> string -> string
 
 val constructor_name : string -> string 
 
-val type_name_of_message : Astc.message_scope -> Astc.message_scope -> string -> string
+val type_name_of_message : Astc.type_scope -> Astc.type_scope -> string -> string
 

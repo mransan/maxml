@@ -51,6 +51,17 @@ type oneof = {
   oneof_fields : oneof_label field list; 
 }
 
+type enum_value = {
+  enum_value_name: string; 
+  enum_value_int : int;
+}
+
+type enum = {
+  enum_id   : int; 
+  enum_name : string; 
+  enum_values: enum_value list; 
+} 
+
 (** Body content defines all the possible consituant 
     of a message. 
   *)
@@ -58,6 +69,7 @@ type message_body_content =
   | Message_field of field_label field 
   | Message_oneof_field of oneof 
   | Message_sub of message 
+  | Message_enum of enum 
 
 (** Message entity. 
  

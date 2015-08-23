@@ -44,15 +44,15 @@ let () =
     astc_msgs @ Astc_util.compile_message_p1 scope ast_msg
   ) [] proto.Ast.messages in 
   L.log "-- Phase 1 --\n"; 
-  List.iter (fun msg -> 
+  List.iter (function | Astc.Message  msg -> 
     L.endline @@ Astc_util.string_of_message msg
   ) astc_msgs; 
-  let astc_msgs = List.map (Astc_util.compile_message_p2 astc_msgs) astc_msgs in 
+  let astc_msgs = List.map (Astc_util.compile_type_p2 astc_msgs) astc_msgs in 
 
   (* -- OCaml Backend -- *)
 
   let module BO = Backend_ocaml in 
-  let otypes = List.fold_left (fun otypes m -> 
+  let otypes = List.fold_left (fun otypes -> function | Astc.Message m -> 
     otypes @ BO.compile astc_msgs m 
   ) [] astc_msgs in 
   let s = Backend_ocaml_static.prefix_payload_to_ocaml_t in 

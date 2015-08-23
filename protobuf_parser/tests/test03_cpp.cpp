@@ -9,6 +9,7 @@ Test create_test() {
     Test t;
     t.set_i(123);
     t.set_j(456);
+    t.set_k(789);
 
     return t;
 }
