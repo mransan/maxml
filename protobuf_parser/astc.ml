@@ -68,7 +68,7 @@ type 'a field_type =
   | Field_type_bool 
   | Field_type_string 
   | Field_type_bytes 
-  | Field_type_message of 'a 
+  | Field_type_type of 'a 
 
 (** field definition. 
     

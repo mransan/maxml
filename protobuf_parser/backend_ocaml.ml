@@ -9,7 +9,8 @@ type field_type =
   | Int 
   | Bytes
   | Bool
-  | User_defined of string 
+  | User_defined_message of string 
+  | User_defined_enum    of string 
 
 
 let printf_char_of_field_type = function
@@ -18,7 +19,8 @@ let printf_char_of_field_type = function
   | Int       -> 'i'
   | Bytes     -> 's'
   | Bool      -> 'b'
-  | User_defined _ -> 's'
+  | User_defined_message _ -> 's'
+  | User_defined_enum    _ -> 's'
 
 (** utility function used to generate decode/encode function names 
     which are implemented in [Backend_ocaml_static].
@@ -43,7 +45,8 @@ let string_of_field_type type_qualifier field_type =
     | Int    -> "int"
     | Bytes  -> "bytes"
     | Bool   -> "bool"
-    | User_defined t -> t in 
+    | User_defined_message t -> t
+    | User_defined_enum    t -> t in 
   match type_qualifier with 
   | No_qualifier -> s 
   | Option       -> s ^ " option"
@@ -54,30 +57,39 @@ type field_encoding = {
   payload_kind:Encoding_util.payload_kind; 
 }
 
-type record_encoding_type = 
-  | Regular_field of field_encoding
-  | One_of        of variant  
+type 'a ivariant= {
+  variant_name : string; 
+  constructors : 'a list;
+}
 
-and 'a field = {
+type 'a ifield = {
   field_type : field_type; 
   field_name : field_name; 
   type_qualifier : type_qualifier; 
   encoding_type : 'a;
 }
 
+type const_variant_constructor = string * int  
+
+type const_variant = const_variant_constructor ivariant 
+
+type variant_constructor = field_encoding ifield 
+
+type variant = variant_constructor ivariant 
+
+type record_encoding_type = 
+  | Regular_field of field_encoding
+  | One_of        of variant  
+
 and record = {
   record_name: string; 
-  fields : record_encoding_type field list; 
-}
-
-and variant = {
-  variant_name : string; 
-  constructors : field_encoding field list;
+  fields : record_encoding_type ifield list; 
 }
 
 type type_ = 
   | Record of record 
   | Variant of variant
+  | Const_variant of const_variant 
 
 let type_name message_scope name = 
   let module S = String in  
@@ -132,10 +144,11 @@ let type_name_of_message field_message_scope message_scope message_name =
       "_" ^
       S.lowercase_ascii message_name 
 
+
 let get_type_name_from_all_messages field_message_scope all_types i = 
   let module S = String in 
   try 
-    let t = List.find (fun t -> Astc_util.type_id_of_type t = i) all_types in 
+    let t = Astc_util.type_of_id all_types i  in 
     let type_scope = Astc_util.type_scope_of_type t in 
     let type_name  = Astc_util.type_name_of_type  t in 
     type_name_of_message field_message_scope type_scope type_name 
@@ -150,7 +163,7 @@ let compile_field ?as_constructor f type_qualifier message_scope all_types field
     | None   -> record_field_name field_name 
   in 
 
-  let payload_kind = Encoding_util.payload_kind_of_field_type encoding_type in 
+  let payload_kind = Encoding_util.payload_kind_of_field_type all_types encoding_type in 
   let field_type   = match encoding_type with
     | Astc.Field_type_double  -> Float
     | Astc.Field_type_float  ->  Float
@@ -169,9 +182,11 @@ let compile_field ?as_constructor f type_qualifier message_scope all_types field
     | Astc.Field_type_bool  -> Bool
     | Astc.Field_type_string  -> String
     | Astc.Field_type_bytes  -> Bytes
-    | Astc.Field_type_message i -> User_defined ( 
-      get_type_name_from_all_messages message_scope all_types i
-    )
+    | Astc.Field_type_type i -> 
+      let name = get_type_name_from_all_messages message_scope all_types i in 
+      match Astc_util.type_of_id all_types i with
+      | Astc.Enum _ -> User_defined_enum name 
+      | Astc.Message _ -> User_defined_message name 
   in 
   {
     field_type; 
@@ -194,7 +209,9 @@ let compile_oneof all_types message_scope outer_message_name {Astc.oneof_name ; 
   ) oneof_fields in 
   {variant_name; constructors; }
 
-let compile 
+
+
+let compile_message  
   (all_types: Astc.resolved Astc.proto) 
   (message: Astc.resolved Astc.message ) :
   type_ list   = 
@@ -220,7 +237,8 @@ let compile
     | Astc.Message_oneof_field f -> (
       let variant = compile_oneof all_types message_scope message_name f in 
       let field   = {
-        field_type =  User_defined (variant.variant_name); 
+        field_type =  User_defined_message (variant.variant_name); 
+        (* TODO the field_type is not really User_defined_message *)
         field_name =  record_field_name f.Astc.oneof_name;
         type_qualifier = No_qualifier;
         encoding_type = One_of variant; 
@@ -233,6 +251,21 @@ let compile
     record_name; 
     fields = List.rev fields;
   } :: variants)
+
+let compile_enum {Astc.enum_name; Astc.enum_values; Astc.enum_scope; Astc.enum_id = _ } = 
+  let {Astc.message_names; Astc.namespaces = _ } = enum_scope in 
+  let variant_name = type_name message_names enum_name in 
+  let constructors = List.map (fun {Astc.enum_value_name; Astc.enum_value_int} -> 
+    (constructor_name enum_value_name,  enum_value_int)
+  ) enum_values in 
+  Const_variant {
+    variant_name; 
+    constructors;  
+  }
+
+let compile all_types = function 
+  | Astc.Message m -> compile_message all_types m 
+  | Astc.Enum    e -> [compile_enum e] 
 
 module Codegen = struct 
   module P = Printf
@@ -269,6 +302,14 @@ module Codegen = struct
         sp "  | %s of %s" field_name type_name
       ) constructors;
     ]
+  
+  let gen_const_variant_type {variant_name; constructors } = 
+    concat [
+      P.sprintf "type %s =" variant_name; 
+      concat @@ List.map (fun (name, _ ) -> 
+        sp "  | %s " name
+      ) constructors;
+    ]
 
   (** [gen_mappings r] generates a per record variable to hold the 
       mapping between a field number and the associated decoding routine. 
@@ -286,8 +327,10 @@ module Codegen = struct
         match encoding_type with 
         | Regular_field {field_number; payload_kind } -> (
           let decoding = match field_type with 
-            | User_defined t -> 
+            | User_defined_message t -> 
                P.sprintf "(fun d -> `%s (decode_%s (Pc.Decoder.nested d)))" (constructor_name t) t  
+            | User_defined_enum t -> 
+               P.sprintf "(fun d -> `%s (decode_%s d))" (constructor_name t) t  
             | _ -> 
                let field_type = string_of_field_type No_qualifier field_type in 
                P.sprintf "(fun d -> `%s (decode_%s_as_%s d))" 
@@ -301,8 +344,11 @@ module Codegen = struct
           concat @@ List.map (fun {encoding_type; field_type; field_name; type_qualifier = _ } -> 
             let {field_number; payload_kind;} = encoding_type in 
             let decoding  =  match field_type with 
-              | User_defined t -> 
+              | User_defined_message  t -> 
                 P.sprintf "(fun d -> `%s (%s (decode_%s (Pc.Decoder.nested d))))" 
+                  (constructor_name variant_name) field_name t  
+              | User_defined_enum t -> 
+                P.sprintf "(fun d -> `%s (%s (decode_%s d))" 
                   (constructor_name variant_name) field_name t  
               | _ -> 
                 let field_type = string_of_field_type No_qualifier field_type in 
@@ -386,8 +432,10 @@ module Codegen = struct
         sp "Pc.Encoder.key (%i, Pc.%s) encoder; " 
           field_number (constructor_name @@ Encoding_util.string_of_payload_kind payload_kind);
         match field_type with 
-        | User_defined t -> 
+        | User_defined_message t -> 
           sp "Pc.Encoder.nested (encode_%s %s) encoder;" t v_name 
+        | User_defined_enum t -> 
+          sp "encode_%s %s encoder;" t v_name 
         | _ ->  
           sp "encode_%s_as_%s %s encoder;"
             (string_of_field_type No_qualifier field_type) 
@@ -453,7 +501,9 @@ module Codegen = struct
 
     let gen_field field_name field_type = 
       match field_type with 
-      | User_defined t -> 
+      | User_defined_message t -> 
+        P.sprintf "P.sprintf \"\\n%s: %%s\" @@ string_of_%s x" field_name t  
+      | User_defined_enum t -> 
         P.sprintf "P.sprintf \"\\n%s: %%s\" @@ string_of_%s x" field_name t  
       | _ ->  
         P.sprintf "P.sprintf \"\\n%s: %%%c\" x"  
@@ -508,4 +558,31 @@ module Codegen = struct
       sp "(** [string_of_%s v] returns a debugging string for [v] *)" record_name;
     ]
 
+  let gen_decode_const_variant {variant_name; constructors; } = 
+    concat [
+      P.sprintf "let decode_%s d = " variant_name; 
+      sp "  match decode_varint_as_int d with";
+      concat @@ List.map (fun (name, value) -> 
+        sp "  | %i -> %s" value name
+      ) constructors; 
+      sp "  | _ -> failwith \"Unknown value for enum %s\"" variant_name; 
+    ] 
+  
+  let gen_encode_const_variant {variant_name; constructors; } = 
+    concat [
+      P.sprintf "let encode_%s v encoder =" variant_name; 
+      sp "  match v with";
+      concat @@ List.map (fun (name, value) -> 
+        sp "  | %s -> encode_int_as_varint %i encoder" name value
+      ) constructors; 
+    ] 
+  
+  let gen_string_of_const_variant {variant_name; constructors; } = 
+    concat [
+      P.sprintf "let string_of_%s v =" variant_name; 
+      sp "  match v with";
+      concat @@ List.map (fun (name, _ ) -> 
+        sp "  | %s -> \"%s\"" name name
+      ) constructors; 
+    ] 
 end  

@@ -16,6 +16,7 @@ let field_type {Astc.field_type; _ } =
 let field_label {Astc.field_parsed = {Ast.field_label; _ }; _ } = 
   field_label 
 
+
 let empty_scope  = { Astc.namespaces = []; Astc.message_names = [] } 
 
 let rev_split_by_char c s = 
@@ -80,7 +81,7 @@ let field_type_of_string = function
  | "bool"      -> Astc.Field_type_bool 
  | "string"    -> Astc.Field_type_string 
  | "bytes"     -> Astc.Field_type_bytes 
- | s  -> Astc.Field_type_message (unresolved_of_string s) 
+ | s  -> Astc.Field_type_type  (unresolved_of_string s) 
 
 let map_field_type : 'a Astc.field_type  -> 'b Astc.field_type = function  
  | Astc.Field_type_double     -> Astc.Field_type_double    
@@ -98,7 +99,7 @@ let map_field_type : 'a Astc.field_type  -> 'b Astc.field_type = function
  | Astc.Field_type_bool       -> Astc.Field_type_bool 
  | Astc.Field_type_string     -> Astc.Field_type_string 
  | Astc.Field_type_bytes      -> Astc.Field_type_bytes 
- | Astc.Field_type_message  _ -> raise @@ E.programmatic_error E.Unexpect_field_type 
+ | Astc.Field_type_type _ -> raise @@ E.programmatic_error E.Unexpect_field_type 
 
 let compile_default field_name constant = function  
   | Astc.Field_type_double 
@@ -157,7 +158,8 @@ let compile_default field_name constant = function
   ) 
   | Astc.Field_type_bytes -> raise @@ E.invalid_default_value 
     ~field_name ~info:"default value not supported for bytes" ()
-  | Astc.Field_type_message _ -> raise @@ E.invalid_default_value 
+  | Astc.Field_type_type _ -> raise @@ E.invalid_default_value 
+    (* TODO NOT true for enum *)
     ~field_name ~info:"default value not supported for message" ()
 
 let get_default field_name field_options field_type = 
@@ -280,6 +282,9 @@ let type_id_of_type = function
   | Astc.Enum {Astc.enum_id; _ } -> enum_id 
   | Astc.Message {Astc.id; _ } -> id
 
+let type_of_id all_types id  = 
+  List.find (fun t -> type_id_of_type t = id) all_types 
+
 let find_all_types_in_field_scope types scope = 
   List.filter (fun t -> 
     let {Astc.namespaces; Astc.message_names; } = type_scope_of_type t in 
@@ -338,7 +343,7 @@ let compile_message_p2 types ({
     let field_name = field_name field in 
     L.log "field_name: %s\n" field_name; 
     match field.Astc.field_type with 
-    | Astc.Field_type_message ({Astc.scope; Astc.type_name; Astc.from_root} as unresolved) -> ( 
+    | Astc.Field_type_type ({Astc.scope; Astc.type_name; Astc.from_root} as unresolved) -> ( 
       L.endline @@ string_of_unresolved unresolved ; 
       
       let search_scopes = search_scopes scope from_root in 
@@ -352,10 +357,13 @@ let compile_message_p2 types ({
         match id with 
         | Some _ -> id 
         | None   -> process_field_in_scope types scope type_name
+        (* TODO this is where we are resolving and potentially where we 
+           could keep track of the whether it's a message or enum 
+         *)
       ) None search_scopes in 
       
       match id with 
-      | Some id -> (Astc.Field_type_message id:Astc.resolved Astc.field_type) 
+      | Some id -> (Astc.Field_type_type id:Astc.resolved Astc.field_type) 
       | None    -> 
         raise @@ E.unresolved_type ~field_name ~type_:type_name ~message_name () 
     )

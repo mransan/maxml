@@ -13,7 +13,7 @@ let string_of_payload_kind = function
   | Bits64   -> "bits64"
   | Bytes    -> "bytes"
 
-let payload_kind_of_field_type = function 
+let payload_kind_of_field_type all_types = function 
   | Astc.Field_type_double  -> Bits64
   | Astc.Field_type_float  -> Bits32 
   | Astc.Field_type_int32  -> Varint false
@@ -29,4 +29,7 @@ let payload_kind_of_field_type = function
   | Astc.Field_type_bool  -> Varint false 
   | Astc.Field_type_string  -> Bytes
   | Astc.Field_type_bytes  -> Bytes
-  | Astc.Field_type_message _ -> Bytes 
+  | Astc.Field_type_type id -> 
+    match Astc_util.type_of_id all_types id with 
+    | Astc.Enum    _ -> Varint false  
+    | Astc.Message _ -> Bytes 

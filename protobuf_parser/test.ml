@@ -327,7 +327,7 @@ let () =
       Astc.type_name = "SubMessage";
       Astc.from_root = false;
     } in 
-    assert ((Astc.Field_type_message unresolved) = f1.Astc.field_type); 
+    assert ((Astc.Field_type_type unresolved) = f1.Astc.field_type); 
     ()
   in 
 
@@ -624,8 +624,8 @@ let () =
     let all_types = List.map (fun t -> 
       Astc_util.compile_type_p2 all_types t
     ) all_types in 
-    List.flatten @@ List.map (function | Astc.Message  m -> 
-      BO.compile all_types m  
+    List.flatten @@ List.map (fun t ->
+      BO.compile all_types t 
     ) all_types
   in 
   let () = 
@@ -687,7 +687,7 @@ let () =
         fields = [
           {field_type = Int; field_name = "m11"; type_qualifier = No_qualifier;
            encoding_type = Regular_field {field_number = 1; payload_kind = Encoding_util.Varint false}};
-          {field_type = User_defined "m1_m2"; field_name = "sub"; type_qualifier = No_qualifier;
+          {field_type = User_defined_message "m1_m2"; field_name = "sub"; type_qualifier = No_qualifier;
            encoding_type = Regular_field {field_number = 2; payload_kind = Encoding_util.Bytes}};
         ];
       }) = List.nth ocaml_types 1);
@@ -721,7 +721,7 @@ let () =
       BO.(Record {
         record_name = "m1"; 
         fields = [
-          {field_type = User_defined "m1_o1"; field_name = "o1"; type_qualifier = No_qualifier;
+          {field_type = User_defined_message "m1_o1"; field_name = "o1"; type_qualifier = No_qualifier;
           encoding_type = One_of variant};
           {field_type = Int; field_name = "v1"; type_qualifier = No_qualifier;
            encoding_type = Regular_field {field_number = 3; payload_kind = Encoding_util.Varint false}};
@@ -743,7 +743,7 @@ let () =
         type_qualifier = Option;
         encoding_type = Regular_field {field_number = 2; payload_kind = Encoding_util.Bytes}
       };{
-        field_type = User_defined "other"; 
+        field_type = User_defined_message "other"; 
         field_name = "v3"; 
         type_qualifier = No_qualifier;
         encoding_type = Regular_field {field_number = 3; payload_kind = Encoding_util.Bytes}

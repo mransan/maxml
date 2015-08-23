@@ -16,7 +16,8 @@ type field_type =
   | Int 
   | Bytes
   | Bool
-  | User_defined of string 
+  | User_defined_message of string 
+  | User_defined_enum    of string 
 
 type field_name = string 
 
@@ -30,40 +31,49 @@ type field_encoding = {
   payload_kind:Encoding_util.payload_kind; 
 }
 
-type record_encoding_type = 
-  | Regular_field of field_encoding
-  | One_of        of variant  
-
 (** the field is parametrized by the encoding_type with could either 
     [field_encoding] or [record_encoding_type] depending 
     if the field is used in a variant or record type
  *) 
-and 'a field = {
+type 'a ifield = {
   field_type : field_type; 
   field_name : field_name; 
   type_qualifier : type_qualifier; 
   encoding_type : 'a;
 }
 
-and record = {
-  record_name: string; 
-  fields : record_encoding_type field list; 
+type 'a ivariant= {
+  variant_name : string; 
+  constructors : 'a list;
 }
 
-and variant = {
-  variant_name : string; 
-  constructors : field_encoding field list;
+type const_variant_constructor = string * int  
+
+type const_variant = const_variant_constructor ivariant 
+
+type variant_constructor = field_encoding ifield 
+
+type variant = variant_constructor ivariant 
+
+type record_encoding_type = 
+  | Regular_field of field_encoding
+  | One_of        of variant  
+
+type record = {
+  record_name: string; 
+  fields : record_encoding_type ifield list; 
 }
 
 type type_ = 
   | Record of record 
   | Variant of variant
+  | Const_variant  of const_variant 
 
 (** {2 Compilation } *) 
 
 val compile :
   Astc.resolved Astc.proto ->
-  Astc.resolved Astc.message -> 
+  Astc.resolved Astc.proto_type -> 
   type_ list 
 
 (** {2 Code Generation} *)
@@ -77,16 +87,25 @@ module Codegen : sig
   val gen_variant_type : variant -> string 
   (** [gen_variant_type v] generates the OCaml type declaration for [v]
    *)
+  
+  val gen_const_variant_type : const_variant -> string 
+  (** [gen_const_variant_type v] generates the OCaml type declaration for [v]
+   *)
 
   val gen_decode : record -> string 
   (** [gen_decode record]  generates the function implementation for
       decoding a message into the given record type. 
    *)
-
+  
   val gen_decode_sig : record -> string 
   (** [gen_decode_sig record] generates the function signature for
       decoding a message into the given record type.
     *) 
+
+  val gen_decode_const_variant : const_variant -> string 
+  (** [gen_decode_const_variant v]  generates the function implementation for
+      decoding a message into the given variant type. 
+   *)
 
   val gen_encode : record -> string 
   (** [gen_encode record] generates the function implementation for 
@@ -98,9 +117,19 @@ module Codegen : sig
       encoding the given [record] type into a protobuffer. 
     *)
 
+  val gen_encode_const_variant: const_variant -> string 
+  (** [gen_encode_const_variant v] generates the function implementation for 
+      encoding the given [const_variant] type into a protobuffer. 
+    *)
+
   val gen_string_of : record -> string
   (** [gen_string_of record] generates the function implementation for 
       computing a debug string of the given record
+    *)
+
+  val gen_string_of_const_variant : const_variant -> string
+  (** [gen_string_of v] generates the function implementation for 
+      computing a debug string of the given const_variant 
     *)
 
   val gen_string_of_sig : record -> string

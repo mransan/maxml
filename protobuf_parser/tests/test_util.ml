@@ -57,6 +57,13 @@ let decode ?noprint file_name f_decode f_to_string ref_data  =
   if  x = ref_data 
   then (
     print_endline "ML: -- Good --"; 
+    match noprint with 
+    | None -> (
+      print_endline "-- [ML Debug Start] :\n";
+      print_endline @@ f_to_string x; 
+      print_endline "-- [ML Debug End] :\n"
+    )
+    | Some _ -> () ;
     exit 0
   )
   else (
