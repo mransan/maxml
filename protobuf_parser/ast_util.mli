@@ -32,8 +32,22 @@ val message_body_oneof_field  :
   Ast.oneof -> 
   Ast.message_body_content 
 
+val enum_value :
+  int_value:int -> 
+  string -> 
+  Ast.enum_value 
+
+val enum : 
+  ?enum_values:Ast.enum_value list -> 
+  string -> 
+  Ast.enum 
+
 val message_body_sub : 
   Ast.message -> 
+  Ast.message_body_content
+
+val message_body_enum: 
+  Ast.enum -> 
   Ast.message_body_content
 
 val message : 

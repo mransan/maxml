@@ -8,6 +8,7 @@ let string_of_token = function
   | Parser.REPEATED     ->  "REPEATED" 
   | Parser.ONE_OF       ->  "ONE_OF"
   | Parser.MESSAGE      ->  "MESSAGE"
+  | Parser.ENUM         ->  "ENUM"
   | Parser.PACKAGE      ->  "PACKAGE"
   | Parser.RBRACE       ->  "RBRACE" 
   | Parser.LBRACE       ->  "LBRACE" 
@@ -174,6 +175,56 @@ let () =
   in
   let () = 
     let s = "
+    message TestM { 
+      enum TestE {
+        TestE_Value1 = 1; 
+        TestE_Value2 = 2; 
+      }
+      required TestE teste_field = 1; 
+    }"
+    in 
+    (*
+    Printf.printf "---- MESSAGE ----\n";
+    *)
+    let {
+      Ast.message_name; 
+      Ast.message_body;
+    } = parse Parser.message_ s in 
+    assert (message_name  = "TestM");
+    assert (List.length message_body= 2);
+    let (Ast.Message_enum {
+      Ast.enum_name;
+      Ast.enum_values; 
+    }) = List.hd message_body in 
+    assert ("TestE" = enum_name); 
+    assert (2 = List.length enum_values);
+    ()
+  in
+  let () = 
+    let s = "
+    message TestM { 
+      enum TestE {
+        TestE_Value1 = 1; 
+        TestE_Value2 = 2; 
+      }
+      required TestE teste_field = 1; 
+    }"
+    in 
+    let m = parse Parser.message_ s in 
+    let all_types = Astc_util.compile_message_p1 Astc_util.empty_scope m in 
+    assert (2 =List.length all_types); 
+    let (Astc.Enum {
+      Astc.enum_scope;
+      Astc.enum_name; 
+      Astc.enum_values
+    }) = List.nth all_types 0 in 
+    assert ("TestE" = enum_name); 
+    assert (2 = List.length enum_values); 
+    assert ({Astc.namespaces = []; Astc.message_names = ["TestM"]} = enum_scope);
+    ()
+  in
+  let () = 
+    let s = "
     message Test {
       required int64 ival  = 1;
       required string sval = 2;
@@ -182,11 +233,11 @@ let () =
     let ast  = parse Parser.message_ s in 
     let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in  
     assert (List.length all_messages = 1);
-    let {
+    let (Astc.Message {
       Astc.message_scope; 
       Astc.message_name;
       Astc.message_body; 
-    } = List.hd all_messages in 
+    }) = List.hd all_messages in 
     assert (Astc_util.empty_scope = message_scope);
     assert ("Test" = message_name); 
     assert (2 = List.length message_body); 
@@ -226,11 +277,11 @@ let () =
     let ast  = parse Parser.message_ s in 
     let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in  
     assert (List.length all_messages = 2);
-    let {
+    let (Astc.Message {
       Astc.message_scope; 
       Astc.message_name;
       Astc.message_body; 
-    } = List.hd all_messages in 
+    }) = List.hd all_messages in 
     assert (1 = List.length message_scope.Astc.message_names);
     assert ("Inner" = message_name); 
     assert (2 = List.length message_body); 
@@ -240,11 +291,11 @@ let () =
       Astc.message_names = [ "Test" ] 
     } in 
     assert(expected_scope = message_scope);
-    let {
+    let (Astc.Message {
       Astc.message_scope; 
       Astc.message_name;
       Astc.message_body; 
-    } = List.nth all_messages 1 in 
+    }) = List.nth all_messages 1 in 
     assert (Astc_util.empty_scope = message_scope);
     assert ("Test" = message_name); 
     assert (0 = List.length message_body); 
@@ -259,11 +310,11 @@ let () =
     let ast  = parse Parser.message_ s in 
     let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in  
     assert (List.length all_messages = 1);
-    let {
+    let (Astc.Message {
       Astc.message_scope; 
       Astc.message_name;
       Astc.message_body; 
-    } = List.hd all_messages in 
+    }) = List.hd all_messages in 
     assert (Astc_util.empty_scope  = message_scope);
     assert ("Test" = message_name); 
     assert (1 = List.length message_body); 
@@ -276,7 +327,7 @@ let () =
       Astc.type_name = "SubMessage";
       Astc.from_root = false;
     } in 
-    assert ((Astc.Field_type_message unresolved) = f1.Astc.field_type); 
+    assert ((Astc.Field_type_type unresolved) = f1.Astc.field_type); 
     ()
   in 
 
@@ -290,15 +341,15 @@ let () =
     let ast = parse Parser.message_ s in 
     let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope  ast in 
     assert (6 = List.length all_messages); 
-    let filtered = Astc_util.find_all_message_in_field_scope all_messages [] in 
+    let filtered = Astc_util.find_all_types_in_field_scope all_messages [] in 
     assert (1 = List.length filtered);
-    let filtered = Astc_util.find_all_message_in_field_scope all_messages ["M1"] in 
+    let filtered = Astc_util.find_all_types_in_field_scope all_messages ["M1"] in 
     assert (2 = List.length filtered);
-    let filtered = Astc_util.find_all_message_in_field_scope all_messages ["M1";"M2"] in 
+    let filtered = Astc_util.find_all_types_in_field_scope all_messages ["M1";"M2"] in 
     assert (1 = List.length filtered);
-    let filtered = Astc_util.find_all_message_in_field_scope all_messages ["M1";"M3"] in 
+    let filtered = Astc_util.find_all_types_in_field_scope all_messages ["M1";"M3"] in 
     assert (1 = List.length filtered);
-    let filtered = Astc_util.find_all_message_in_field_scope all_messages ["M1";"M3";"M31"] in 
+    let filtered = Astc_util.find_all_types_in_field_scope all_messages ["M1";"M3";"M31"] in 
     assert (1 = List.length filtered);
     ()
   in 
@@ -335,8 +386,9 @@ let () =
     }
     " in 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
-    ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages; 
+    let all_types = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
+    ignore @@ List.map (function 
+      | Astc.Message m  -> Astc_util.compile_message_p2 all_types m) all_types; 
     ()
   in 
 
@@ -348,9 +400,9 @@ let () =
 
   let test_unresolved_msg s = 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
+    let all_types = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
     assert_unresolved (fun () -> 
-      ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages
+      ignore @@ List.map (function | Astc.Message m -> Astc_util.compile_message_p2 all_types m) all_types
     )
   in
 
@@ -402,8 +454,8 @@ let () =
   let test_duplicate s = 
     let ast = parse Parser.message_ s in 
     assert_duplicate (fun () -> 
-      let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
-      ignore @@ List.map (fun m -> Astc_util.compile_message_p2 all_messages m) all_messages
+      let all_types = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
+      ignore @@ List.map (function |Astc.Message m -> Astc_util.compile_message_p2 all_types m) all_types
     )
   in
   let () = 
@@ -568,13 +620,13 @@ let () =
   let module BO = Backend_ocaml in 
   let compile_to_ocaml s = 
     let ast = parse Parser.message_ s in 
-    let all_messages = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
-    let all_messages = List.map (fun m -> 
-      Astc_util.compile_message_p2 all_messages m
-    ) all_messages in 
-    List.flatten @@ List.map (fun m -> 
-      BO.compile all_messages m  
-    ) all_messages
+    let all_types = Astc_util.compile_message_p1 Astc_util.empty_scope ast in 
+    let all_types = List.map (fun t -> 
+      Astc_util.compile_type_p2 all_types t
+    ) all_types in 
+    List.flatten @@ List.map (fun t ->
+      BO.compile all_types t 
+    ) all_types
   in 
   let () = 
     let s = "
@@ -593,17 +645,17 @@ let () =
       record_name = "m"; 
       fields = [
         {field_type = Int; field_name = "v1"; type_qualifier = No_qualifier;
-        encoding_type = Regular_field {field_number = 1; payload_kind = Encoding_util.Varint false}};
+        encoding_type = Regular_field {field_number = 1; nested = false;  payload_kind = Encoding_util.Varint false}};
         {field_type = String; field_name = "v2"; type_qualifier = No_qualifier;
-        encoding_type = Regular_field {field_number = 2; payload_kind = Encoding_util.Bytes}};
+        encoding_type = Regular_field {field_number = 2; nested = false; payload_kind = Encoding_util.Bytes}};
         {field_type = Bool; field_name = "v3"; type_qualifier = Option; 
-        encoding_type = Regular_field {field_number = 3; payload_kind = Encoding_util.Varint false}};
+        encoding_type = Regular_field {field_number = 3; nested = false; payload_kind = Encoding_util.Varint false}};
         {field_type = Float; field_name = "v4"; type_qualifier = Option;
-        encoding_type = Regular_field {field_number = 4; payload_kind = Encoding_util.Bits32}};
+        encoding_type = Regular_field {field_number = 4; nested = false; payload_kind = Encoding_util.Bits32}};
         {field_type = Float; field_name = "v5"; type_qualifier = Option;
-        encoding_type = Regular_field {field_number = 5; payload_kind = Encoding_util.Bits64}};
+        encoding_type = Regular_field {field_number = 5; nested = false; payload_kind = Encoding_util.Bits64}};
         {field_type = Bytes; field_name = "v6"; type_qualifier = No_qualifier;
-        encoding_type = Regular_field {field_number = 6; payload_kind = Encoding_util.Bytes}};
+        encoding_type = Regular_field {field_number = 6; nested = false; payload_kind = Encoding_util.Bytes}};
       ];
     }) = List.hd ocaml_types);
     () 
@@ -626,7 +678,7 @@ let () =
         record_name = "m1_m2"; 
         fields = [
           {field_type = Int; field_name = "m21"; type_qualifier = No_qualifier;
-           encoding_type = Regular_field {field_number = 1; payload_kind = Encoding_util.Varint false}};
+           encoding_type = Regular_field {field_number = 1; nested = false; payload_kind = Encoding_util.Varint false}};
         ];
       }) = List.nth ocaml_types 0);
     assert(
@@ -634,9 +686,9 @@ let () =
         record_name = "m1"; 
         fields = [
           {field_type = Int; field_name = "m11"; type_qualifier = No_qualifier;
-           encoding_type = Regular_field {field_number = 1; payload_kind = Encoding_util.Varint false}};
-          {field_type = User_defined "m1_m2"; field_name = "sub"; type_qualifier = No_qualifier;
-           encoding_type = Regular_field {field_number = 2; payload_kind = Encoding_util.Bytes}};
+           encoding_type = Regular_field {field_number = 1; nested = false; payload_kind = Encoding_util.Varint false}};
+          {field_type = User_defined_type "m1_m2"; field_name = "sub"; type_qualifier = No_qualifier;
+          encoding_type = Regular_field {field_number = 2; nested = true; payload_kind = Encoding_util.Bytes}};
         ];
       }) = List.nth ocaml_types 1);
     () 
@@ -659,9 +711,9 @@ let () =
         variant_name  = "m1_o1"; 
         constructors = [
           {field_type = Int; field_name = "Intv"; type_qualifier = No_qualifier;
-           encoding_type = {field_number = 1; payload_kind = Encoding_util.Varint false}};
+           encoding_type = {Encoding_util.field_number = 1; nested = false; payload_kind = Encoding_util.Varint false}};
           {field_type = String; field_name = "Stringv"; type_qualifier = No_qualifier;
-           encoding_type = {field_number = 2; payload_kind = Encoding_util.Bytes}};
+           encoding_type = {field_number = 2; nested = false; payload_kind = Encoding_util.Bytes}};
         ];
       }) in
     assert(BO.Variant variant = List.nth ocaml_types 0);
@@ -669,10 +721,10 @@ let () =
       BO.(Record {
         record_name = "m1"; 
         fields = [
-          {field_type = User_defined "m1_o1"; field_name = "o1"; type_qualifier = No_qualifier;
+          {field_type = User_defined_type "m1_o1"; field_name = "o1"; type_qualifier = No_qualifier;
           encoding_type = One_of variant};
           {field_type = Int; field_name = "v1"; type_qualifier = No_qualifier;
-           encoding_type = Regular_field {field_number = 3; payload_kind = Encoding_util.Varint false}};
+           encoding_type = Regular_field {Encoding_util.field_number = 3; nested = false; payload_kind = Encoding_util.Varint false}};
         ];
       }) = List.nth ocaml_types 1);
     () 
@@ -684,17 +736,17 @@ let () =
         field_type = Int; 
         field_name = "v1"; 
         type_qualifier = No_qualifier;
-        encoding_type = Regular_field {field_number = 1; payload_kind = Encoding_util.Varint false}
+        encoding_type = Regular_field {field_number = 1; nested = false; payload_kind = Encoding_util.Varint false}
       }; {
         field_type = String; 
         field_name = "v2"; 
         type_qualifier = Option;
-        encoding_type = Regular_field {field_number = 2; payload_kind = Encoding_util.Bytes}
+        encoding_type = Regular_field {field_number = 2; nested = false; payload_kind = Encoding_util.Bytes}
       };{
-        field_type = User_defined "other"; 
+        field_type = User_defined_type "other"; 
         field_name = "v3"; 
         type_qualifier = No_qualifier;
-        encoding_type = Regular_field {field_number = 3; payload_kind = Encoding_util.Bytes}
+        encoding_type = Regular_field {field_number = 3; nested = true ; payload_kind = Encoding_util.Bytes}
       };];
     }) in 
 
@@ -743,6 +795,40 @@ let () =
     assert(2= List.length proto.Ast.messages);
     assert("M1" = (List.nth proto.Ast.messages 0).Ast.message_name);
     assert("M2" = (List.nth proto.Ast.messages 1).Ast.message_name);
+    ()
+  in
+  let () = 
+    let s =" 
+    ENUM1 = 1;
+    " in 
+    let ev = parse Parser.enum_value_ s in 
+    assert("ENUM1" = ev.Ast.enum_value_name);
+    assert(1       = ev.Ast.enum_value_int);
+    ()
+  in
+  let () = 
+    let s =" 
+    BLAH_12_BLAH = -99999;
+    " in 
+    let ev = parse Parser.enum_value_ s in 
+    assert("BLAH_12_BLAH" = ev.Ast.enum_value_name);
+    assert((-99999) = ev.Ast.enum_value_int);
+    ()
+  in
+  let () = 
+    let s =" 
+    enum Test {
+    EV1 = 1;
+    EV2 = 2;
+    }
+    " in 
+    let ev1 = Ast_util.enum_value ~int_value:1 "EV1" in 
+    let ev2 = Ast_util.enum_value ~int_value:2 "EV2" in 
+    let e   = parse Parser.enum_ s in 
+    assert("Test" = e.Ast.enum_name); 
+    assert(2 = List.length e.Ast.enum_values);
+    assert(ev1 = List.nth e.Ast.enum_values 0); 
+    assert(ev2 = List.nth e.Ast.enum_values 1); 
     ()
   in
   print_endline "\n--- Good ---";

@@ -16,6 +16,7 @@ let keywords = create_hashtable 50 [
   "repeated", REPEATED;
   "oneof"   , ONE_OF;
   "message" , MESSAGE;
+  "enum"    , ENUM;
   "package" , PACKAGE;
 ]
 
@@ -45,6 +46,8 @@ let full_ident    = '.' ? ident ("." * ident) *
 let int_litteral  = ['+' '-']? ['0'-'9']+ 
 let inf_litteral  = ['+' '-']? "inf"
 
+(* TODO fix: somehow E1 for field identified get lexed into a float.
+ *)
 let float_literal =
   ['+' '-']? ['0'-'9']*
   ('.' ['0'-'9']* )?

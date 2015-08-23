@@ -1,16 +1,13 @@
-#include <test03.pb.h>
+#include <test06.pb.h>
 
 #include <test_util.h>
 
 #include <iostream>
 #include <fstream>
-
-Test create_test() {
-    Test t;
-    t.set_i(123);
-    t.set_j(456);
-    t.set_k(789);
-
+    
+TestM create_test() {
+    TestM t;
+    t.set_teste_field(TestM_TestE_TestE_Value1);
     return t;
 }
 
@@ -19,11 +16,11 @@ int main(int argc, char const* const argv[]) {
     std::string mode(argv[1]);
 
     if(mode == "encode") {
-        return encode_to_file(create_test(), "test03.c2ml.data");
+        return encode_to_file(create_test(), "test06.c2ml.data");
     }
     else if(mode == "decode") {
-        Test t; 
-        validate_decode(t, "test04.ml2c.data");
+        TestM t; 
+        validate_decode(t, "test06.ml2c.data", true);
     }
     else {
         std::cerr << "Invalid second argument: " 

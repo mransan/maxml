@@ -37,7 +37,7 @@ testCompat: test04_ml.tsk test03_cpp.tsk
 	./test04_ml.tsk encode
 	./test03_cpp.tsk decode
 
-all: test01 test02 testCompat
+all: test01 test02 testCompat test05 test06 
 
 
 clean:

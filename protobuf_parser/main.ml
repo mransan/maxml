@@ -44,16 +44,17 @@ let () =
     astc_msgs @ Astc_util.compile_message_p1 scope ast_msg
   ) [] proto.Ast.messages in 
   L.log "-- Phase 1 --\n"; 
-  List.iter (fun msg -> 
-    L.endline @@ Astc_util.string_of_message msg
+  List.iter (function 
+    | Astc.Message  msg -> L.endline @@ Astc_util.string_of_message msg
+    | Astc.Enum {Astc.enum_name; _ } -> L.endline @@ enum_name 
   ) astc_msgs; 
-  let astc_msgs = List.map (Astc_util.compile_message_p2 astc_msgs) astc_msgs in 
+  let astc_msgs = List.map (Astc_util.compile_type_p2 astc_msgs) astc_msgs in 
 
   (* -- OCaml Backend -- *)
 
   let module BO = Backend_ocaml in 
-  let otypes = List.fold_left (fun otypes m -> 
-    otypes @ BO.compile astc_msgs m 
+  let otypes = List.fold_left (fun otypes t -> 
+    otypes @ BO.compile astc_msgs t
   ) [] astc_msgs in 
   let s = Backend_ocaml_static.prefix_payload_to_ocaml_t in 
   let s = s ^ Backend_ocaml_static.prefix_decode_f in 
@@ -68,6 +69,12 @@ let () =
     | BO.Variant v -> 
       s ^ 
       BO.Codegen.gen_variant_type v ^ "\n\n"
+    | BO.Const_variant v -> 
+      s ^ 
+      BO.Codegen.gen_const_variant_type v ^ "\n\n" ^ 
+      BO.Codegen.gen_decode_const_variant v ^ "\n\n" ^ 
+      BO.Codegen.gen_encode_const_variant v ^ "\n\n" ^ 
+      BO.Codegen.gen_string_of_const_variant v ^ "\n\n"
   ) s otypes in 
   output_string struct_oc s;  
   let s = List.fold_left (fun s -> function 
@@ -80,5 +87,8 @@ let () =
     | BO.Variant v -> 
       s ^ 
       BO.Codegen.gen_variant_type v ^ "\n\n"
+    | BO.Const_variant v -> 
+      s ^ 
+      BO.Codegen.gen_const_variant_type v ^ "\n\n"
   ) "" otypes in
   output_string sig_oc s  

@@ -2,7 +2,7 @@ module Pc = Protobuf_codec
 module T  = Test04_types 
 
 let decode_ref_data () = {
-  T.i = 123;
+  T.j = 456;
 }
 
 let () = 
