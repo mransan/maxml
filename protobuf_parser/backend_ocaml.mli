@@ -16,8 +16,7 @@ type field_type =
   | Int 
   | Bytes
   | Bool
-  | User_defined_message of string 
-  | User_defined_enum    of string 
+  | User_defined_type of string 
 
 type field_name = string 
 
@@ -25,11 +24,6 @@ type type_qualifier =
   | No_qualifier
   | Option
   | List 
-
-type field_encoding = {
-  field_number:int; 
-  payload_kind:Encoding_util.payload_kind; 
-}
 
 (** the field is parametrized by the encoding_type with could either 
     [field_encoding] or [record_encoding_type] depending 
@@ -51,12 +45,12 @@ type const_variant_constructor = string * int
 
 type const_variant = const_variant_constructor ivariant 
 
-type variant_constructor = field_encoding ifield 
+type variant_constructor = Encoding_util.field_encoding ifield 
 
 type variant = variant_constructor ivariant 
 
 type record_encoding_type = 
-  | Regular_field of field_encoding
+  | Regular_field of Encoding_util.field_encoding
   | One_of        of variant  
 
 type record = {
