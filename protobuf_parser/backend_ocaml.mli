@@ -66,8 +66,8 @@ type type_ =
 (** {2 Compilation } *) 
 
 val compile :
-  Astc.resolved Astc.proto ->
-  Astc.resolved Astc.proto_type -> 
+  Pbtt.resolved Pbtt.proto ->
+  Pbtt.resolved Pbtt.proto_type -> 
   type_ list 
 
 (** {2 Code Generation} *)
@@ -142,5 +142,5 @@ val type_name : string list -> string -> string
 
 val constructor_name : string -> string 
 
-val type_name_of_message : Astc.type_scope -> Astc.type_scope -> string -> string
+val type_name_of_message : Pbtt.type_scope -> Pbtt.type_scope -> string -> string
 

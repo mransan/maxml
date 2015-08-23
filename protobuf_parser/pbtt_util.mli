@@ -1,36 +1,36 @@
 
-(** {2 Accessors for Astc.field type} *)
+(** {2 Accessors for Pbtt.field type} *)
 
-val field_name   : ('a, 'b)  Astc.field -> string 
+val field_name   : ('a, 'b)  Pbtt.field -> string 
 (** [field_name field] returns the name [field] *)
 
-val field_number : ('a, 'b)  Astc.field -> int
+val field_number : ('a, 'b)  Pbtt.field -> int
 (** [field_number field] returns the number of [field] *)
 
-val field_type   : ('a, 'b)  Astc.field -> 'a Astc.field_type
+val field_type   : ('a, 'b)  Pbtt.field -> 'a Pbtt.field_type
 (** [field_type field] returns the type of [field] *)
 
-val field_label  : ('a, 'b)  Astc.field -> 'b 
+val field_label  : ('a, 'b)  Pbtt.field -> 'b 
 (** [field_label field] returns the label of [field] *)
 
-val type_of_id : 'a Astc.proto -> int -> 'a Astc.proto_type 
+val type_of_id : 'a Pbtt.proto -> int -> 'a Pbtt.proto_type 
 (** [type_of_id all_types id] returns the type associated with the given id, 
     @raise [Not_found] if the type is not in the all_types. 
   *)
 
-val string_of_message : 'a Astc.message -> string 
+val string_of_message : 'a Pbtt.message -> string 
 
-(** {2 Accessor for Astc.type *) 
+(** {2 Accessor for Pbtt.type *) 
 
-val type_id_of_type : 'a Astc.proto_type -> int 
-val type_name_of_type : 'a Astc.proto_type -> string
-val type_scope_of_type : 'a Astc.proto_type -> Astc.type_scope
+val type_id_of_type : 'a Pbtt.proto_type -> int 
+val type_name_of_type : 'a Pbtt.proto_type -> string
+val type_scope_of_type : 'a Pbtt.proto_type -> Pbtt.type_scope
 
 (** {2 Creator} *) 
 
-val empty_scope : Astc.type_scope 
+val empty_scope : Pbtt.type_scope 
 
-val scope_of_package : string option -> Astc.type_scope
+val scope_of_package : string option -> Pbtt.type_scope
 
 (** {2 Compilation routines} *) 
 
@@ -51,30 +51,30 @@ val scope_of_package : string option -> Astc.type_scope
  *)
 
 val compile_message_p1 : 
-  Astc.type_scope -> 
-  Ast.message ->
-  Astc.unresolved Astc.proto
+  Pbtt.type_scope -> 
+  Pbpt.message ->
+  Pbtt.unresolved Pbtt.proto
 
 val compile_message_p2: 
-  Astc.unresolved Astc.proto -> 
-  Astc.unresolved Astc.message -> 
-  Astc.resolved Astc.message 
+  Pbtt.unresolved Pbtt.proto -> 
+  Pbtt.unresolved Pbtt.message -> 
+  Pbtt.resolved Pbtt.message 
 (** [compile_message_p2] resolved all the fields in the given message. 
   *)  
 
 val compile_type_p2: 
-  Astc.unresolved Astc.proto -> 
-  Astc.unresolved Astc.proto_type -> 
-  Astc.resolved Astc.proto_type
+  Pbtt.unresolved Pbtt.proto -> 
+  Pbtt.unresolved Pbtt.proto_type -> 
+  Pbtt.resolved Pbtt.proto_type
 
 (** {2 For testing only} *) 
 
-val compile_oneof_p1: Ast.oneof -> Astc.unresolved Astc.oneof
+val compile_oneof_p1: Pbpt.oneof -> Pbtt.unresolved Pbtt.oneof
 
-val compile_field_p1: 'a Ast.field -> (Astc.unresolved, 'a ) Astc.field 
+val compile_field_p1: 'a Pbpt.field -> (Pbtt.unresolved, 'a ) Pbtt.field 
 
 val find_all_types_in_field_scope : 
-  'a Astc.proto -> 
-  Astc.field_scope-> 
-  'a Astc.proto
+  'a Pbtt.proto -> 
+  Pbtt.field_scope-> 
+  'a Pbtt.proto
 

@@ -39,16 +39,16 @@ let () =
   let proto = 
     Parser.proto_ Lexer.lexer (Lexing.from_channel ic)
   in 
-  let scope     = Astc_util.scope_of_package proto.Ast.package in 
+  let scope     = Pbtt_util.scope_of_package proto.Pbpt.package in 
   let astc_msgs = List.fold_left (fun astc_msgs ast_msg -> 
-    astc_msgs @ Astc_util.compile_message_p1 scope ast_msg
-  ) [] proto.Ast.messages in 
+    astc_msgs @ Pbtt_util.compile_message_p1 scope ast_msg
+  ) [] proto.Pbpt.messages in 
   L.log "-- Phase 1 --\n"; 
   List.iter (function 
-    | Astc.Message  msg -> L.endline @@ Astc_util.string_of_message msg
-    | Astc.Enum {Astc.enum_name; _ } -> L.endline @@ enum_name 
+    | Pbtt.Message  msg -> L.endline @@ Pbtt_util.string_of_message msg
+    | Pbtt.Enum {Pbtt.enum_name; _ } -> L.endline @@ enum_name 
   ) astc_msgs; 
-  let astc_msgs = List.map (Astc_util.compile_type_p2 astc_msgs) astc_msgs in 
+  let astc_msgs = List.map (Pbtt_util.compile_type_p2 astc_msgs) astc_msgs in 
 
   (* -- OCaml Backend -- *)
 

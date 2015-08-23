@@ -13,4 +13,4 @@ type field_encoding = {
 
 val string_of_payload_kind : payload_kind -> string 
 
-val encoding_of_field_type : Astc.resolved Astc.proto -> (Astc.resolved, 'a) Astc.field -> field_encoding 
+val encoding_of_field_type : Pbtt.resolved Pbtt.proto -> (Pbtt.resolved, 'a) Pbtt.field -> field_encoding 

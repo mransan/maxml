@@ -29,28 +29,28 @@
 %token EOF
 
 %start field_options_
-%type <Ast.field_options> field_options_
+%type <Pbpt.field_options> field_options_
 
 %start normal_field_ 
-%type <Ast.field_label Ast.field> normal_field_
+%type <Pbpt.field_label Pbpt.field> normal_field_
 
 %start enum_value_ 
-%type <Ast.enum_value> enum_value_
+%type <Pbpt.enum_value> enum_value_
 
 %start enum_
-%type <Ast.enum> enum_
+%type <Pbpt.enum> enum_
 
 %start oneof_
-%type <Ast.oneof> oneof_
+%type <Pbpt.oneof> oneof_
 
 %start message_
-%type <Ast.message> message_
+%type <Pbpt.message> message_
 
 %start message_list_
-%type <Ast.message list> message_list_
+%type <Pbpt.message list> message_list_
 
 %start proto_ 
-%type <Ast.proto> proto_
+%type <Pbpt.proto> proto_
 
 %%
 
@@ -71,8 +71,8 @@ option | oneof | mapField | reserved | emptyStatement } "}"
 */
 
 proto:
-  | package_declaration message_list {Ast_util.proto ~package:$1 $2}
-  | message_list {Ast_util.proto $1}
+  | package_declaration message_list {Pbpt_util.proto ~package:$1 $2}
+  | message_list {Pbpt_util.proto $1}
 
 package_declaration :
   | PACKAGE IDENT SEMICOLON  {$2}  
@@ -83,10 +83,10 @@ message_list:
 
 message : 
   | MESSAGE IDENT LBRACE message_body_content_list RBRACE { 
-    Ast_util.message ~content:$4 $2
+    Pbpt_util.message ~content:$4 $2
   } 
   | MESSAGE IDENT LBRACE RBRACE { 
-    Ast_util.message ~content:[]  $2
+    Pbpt_util.message ~content:[]  $2
   } 
 
 message_body_content_list:
@@ -94,14 +94,14 @@ message_body_content_list:
   | message_body_content message_body_content_list { $1::$2 }
 
 message_body_content :
-  | normal_field { Ast_util.message_body_field  $1 }
-  | oneof        { Ast_util.message_body_oneof_field $1 }
-  | message      { Ast_util.message_body_sub $1 }
-  | enum         { Ast_util.message_body_enum $1 }
+  | normal_field { Pbpt_util.message_body_field  $1 }
+  | oneof        { Pbpt_util.message_body_oneof_field $1 }
+  | message      { Pbpt_util.message_body_sub $1 }
+  | enum         { Pbpt_util.message_body_enum $1 }
 
 oneof :
   ONE_OF IDENT LBRACE oneof_field_list RBRACE { 
-    Ast_util.oneof ~fields:$4 $2 
+    Pbpt_util.oneof ~fields:$4 $2 
   }  
 
 oneof_field_list :
@@ -110,18 +110,18 @@ oneof_field_list :
 
 oneof_field : 
   | IDENT IDENT EQUAL INT field_options SEMICOLON { 
-    Ast_util.oneof_field ~type_:$1 ~number:$4 ~options:$5 $2  
+    Pbpt_util.oneof_field ~type_:$1 ~number:$4 ~options:$5 $2  
   } 
   | IDENT IDENT EQUAL INT SEMICOLON               { 
-    Ast_util.oneof_field ~type_:$1 ~number:$4 $2  
+    Pbpt_util.oneof_field ~type_:$1 ~number:$4 $2  
   } 
 
 normal_field : 
   | label IDENT IDENT EQUAL INT field_options SEMICOLON { 
-    Ast_util.field ~label:$1 ~type_:$2 ~number:$5 ~options:$6 $3
+    Pbpt_util.field ~label:$1 ~type_:$2 ~number:$5 ~options:$6 $3
   } 
   | label IDENT IDENT EQUAL INT SEMICOLON { 
-    Ast_util.field ~label:$1 ~type_:$2 ~number:$5 $3 
+    Pbpt_util.field ~label:$1 ~type_:$2 ~number:$5 $3 
   } 
 
 label :
@@ -141,23 +141,23 @@ field_option :
   IDENT EQUAL constant { ($1, $3) } 
 
 constant : 
-  | INT        { Ast.Constant_int $1 }
-  | FLOAT      { Ast.Constant_float $1 }
+  | INT        { Pbpt.Constant_int $1 }
+  | FLOAT      { Pbpt.Constant_float $1 }
   | IDENT      { match $1 with 
-    | "true"  -> Ast.Constant_bool true 
-    | "false" -> Ast.Constant_bool false 
+    | "true"  -> Pbpt.Constant_bool true 
+    | "false" -> Pbpt.Constant_bool false 
     | _ -> failwith "invalid default value"
   }
-  | STRING     { Ast.Constant_string $1 }; 
+  | STRING     { Pbpt.Constant_string $1 }; 
 
 
 enum:
-  | ENUM IDENT LBRACE enum_values RBRACE {Ast_util.enum ~enum_values:$4 $2 } 
+  | ENUM IDENT LBRACE enum_values RBRACE {Pbpt_util.enum ~enum_values:$4 $2 } 
 
 enum_values:
   | enum_value               { $1::[] }
   | enum_value enum_values   { $1::$2 } 
 
 enum_value : 
-  | IDENT EQUAL INT SEMICOLON { Ast_util.enum_value ~int_value:$3 $1 } 
+  | IDENT EQUAL INT SEMICOLON { Pbpt_util.enum_value ~int_value:$3 $1 } 
 %%
