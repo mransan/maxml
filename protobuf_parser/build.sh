@@ -11,6 +11,7 @@ OCAML_INC=../../install/build/lib/ocaml/site-lib/ocaml-protobuf/
 CMXS="
 str.cmxa 
 logger.cmx
+graph.cmx
 pbpt.cmx 
 pbpt_util.cmx 
 pbtt.cmx 
@@ -28,6 +29,7 @@ $OCAMLYACC parser.mly
 $OCAMLLEX  lexer.mll
 $OCAMLOPT -w +A -c logger.mli
 $OCAMLOPT -w +A -c logger.ml
+$OCAMLOPT -w +A -c graph.ml
 $OCAMLOPT -w +A -c pbpt.ml
 $OCAMLOPT -w +A -c pbtt.ml
 $OCAMLOPT -w +A -c exception.mli

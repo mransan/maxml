@@ -1,5 +1,7 @@
 
 module L = Logger 
+  
+let concat = String.concat ""
 
 (** [parse_args ()] parses the command line argument 
     and returns [(in_channel, out_channel)] where 
@@ -50,45 +52,65 @@ let () =
   ) astc_msgs; 
   let astc_msgs = List.map (Pbtt_util.compile_type_p2 astc_msgs) astc_msgs in 
 
+  let wrap s = 
+    if s <> "" then [s ; "\n\n" ] else [s] 
+  in 
+
   (* -- OCaml Backend -- *)
 
+  let grouped_proto = List.rev @@ Pbtt_util.group astc_msgs in 
+
   let module BO = Backend_ocaml in 
-  let otypes = List.fold_left (fun otypes t -> 
-    otypes @ BO.compile astc_msgs t
-  ) [] astc_msgs in 
-  let s = Backend_ocaml_static.prefix_payload_to_ocaml_t in 
-  let s = s ^ Backend_ocaml_static.prefix_decode_f in 
-  let s = s ^ "\n" in  
-  let s = List.fold_left (fun s -> function 
-    | BO.Record r -> 
-      s ^ 
-      BO.Codegen.gen_record_type r ^ "\n\n" ^ 
-      BO.Codegen.gen_decode r ^ "\n\n" ^  
-      BO.Codegen.gen_encode r ^ "\n\n" ^  
-      BO.Codegen.gen_string_of r ^ "\n\n" 
-    | BO.Variant v -> 
-      s ^ 
-      BO.Codegen.gen_variant_type v ^ "\n\n"
-    | BO.Const_variant v -> 
-      s ^ 
-      BO.Codegen.gen_const_variant_type v ^ "\n\n" ^ 
-      BO.Codegen.gen_decode_const_variant v ^ "\n\n" ^ 
-      BO.Codegen.gen_encode_const_variant v ^ "\n\n" ^ 
-      BO.Codegen.gen_string_of_const_variant v ^ "\n\n"
-  ) s otypes in 
-  output_string struct_oc s;  
-  let s = List.fold_left (fun s -> function 
-    | BO.Record r -> 
-      s ^ 
-      BO.Codegen.gen_record_type r ^ "\n\n" ^ 
-      BO.Codegen.gen_decode_sig  r ^ "\n\n" ^  
-      BO.Codegen.gen_encode_sig  r ^ "\n\n" ^  
-      BO.Codegen.gen_string_of_sig r ^ "\n\n" 
-    | BO.Variant v -> 
-      s ^ 
-      BO.Codegen.gen_variant_type v ^ "\n\n"
-    | BO.Const_variant v -> 
-      s ^ 
-      BO.Codegen.gen_const_variant_type v ^ "\n\n"
-  ) "" otypes in
-  output_string sig_oc s  
+  let otypes = List.rev @@ List.fold_left (fun otypes types -> 
+    let l = List.flatten @@ List.map (fun t -> BO.compile astc_msgs t) types in 
+    l :: otypes
+  ) [] grouped_proto  in 
+
+
+  (* -- `.ml` file -- *)
+
+  let gen types (f:(?and_:unit -> BO.type_ -> string))  = 
+    List.flatten @@ List.rev @@ fst (List.fold_left (fun (sl, first) type_ -> 
+    (if first 
+    then wrap @@ f type_ 
+    else wrap @@ f ~and_:() type_)::sl, false 
+  ) ([], true) types) 
+  in 
+  let gen_opt types (f:(?and_:unit -> BO.type_ -> string option))  = 
+    List.flatten @@ List.rev @@ fst (List.fold_left (fun (sl, first) type_ -> 
+      let s = 
+        if first 
+        then f type_ 
+        else f ~and_:() type_ in 
+      match s with 
+      | Some s -> (wrap s)::sl, false 
+      | None   -> sl   , first 
+  ) ([], true) types) 
+  in 
+  
+  output_string struct_oc @@ concat [
+    Backend_ocaml_static.prefix_payload_to_ocaml_t;
+    Backend_ocaml_static.prefix_decode_f;
+    "\n";
+    concat @@ List.map (fun types_ -> 
+      concat @@ List.flatten [
+      gen     types_ BO.Codegen.gen_type ;
+      gen_opt types_ BO.Codegen.gen_decode;
+      gen_opt types_ BO.Codegen.gen_encode;
+      gen_opt types_ BO.Codegen.gen_string_of;
+      ]
+    ) otypes;
+  ];
+
+  (* -- `.mli` file -- *)
+
+  let wrap_opt = function | Some x -> wrap x | None -> [] in 
+
+  output_string sig_oc @@ concat @@ List.map (fun types_ -> 
+    concat @@ List.flatten [
+      gen      types_ BO.Codegen.gen_type;
+      List.flatten @@ List.map (fun t -> wrap_opt @@ BO.Codegen.gen_decode_sig t) types_ ;
+      List.flatten @@ List.map (fun t -> wrap_opt @@ BO.Codegen.gen_encode_sig t) types_ ;
+      List.flatten @@ List.map (fun t -> wrap_opt @@ BO.Codegen.gen_string_of_sig t) types_ ;
+    ]
+  ) (otypes)

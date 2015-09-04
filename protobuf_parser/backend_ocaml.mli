@@ -74,65 +74,42 @@ val compile :
 
 module Codegen : sig
 
-  val gen_record_type: record -> string 
-  (** [gen_record_type r] generates the OCaml type declaration for [r]
+  val gen_type : ?and_:unit -> type_ -> string 
+  (** [gen_type_const_variant v] generates the OCaml type declaration for [v]
    *)
 
-  val gen_variant_type : variant -> string 
-  (** [gen_variant_type v] generates the OCaml type declaration for [v]
-   *)
-  
-  val gen_const_variant_type : const_variant -> string 
-  (** [gen_const_variant_type v] generates the OCaml type declaration for [v]
-   *)
-
-  val gen_decode : record -> string 
-  (** [gen_decode record]  generates the function implementation for
+  val gen_decode :  ?and_:unit -> type_ -> string option 
+  (** [gen_decode_record record]  generates the function implementation for
       decoding a message into the given record type. 
    *)
   
-  val gen_decode_sig : record -> string 
-  (** [gen_decode_sig record] generates the function signature for
+  val gen_decode_sig : type_ -> string option 
+  (** [gen_decode_sig_record record] generates the function signature for
       decoding a message into the given record type.
     *) 
-
-  val gen_decode_const_variant : const_variant -> string 
-  (** [gen_decode_const_variant v]  generates the function implementation for
-      decoding a message into the given variant type. 
-   *)
-
-  val gen_encode : record -> string 
-  (** [gen_encode record] generates the function implementation for 
-      encoding the given [record] type into a protobuffer. 
+  
+  val gen_encode : ?and_:unit -> type_ -> string option
+  (** [gen_encode t] generates the function signature for 
+      encoding the given type [t] type into a protobuffer. 
     *)
 
-  val gen_encode_sig : record -> string
+  val gen_encode_sig : type_ -> string option 
   (** [gen_encode_sig record] generates the function signature for 
       encoding the given [record] type into a protobuffer. 
     *)
 
-  val gen_encode_const_variant: const_variant -> string 
-  (** [gen_encode_const_variant v] generates the function implementation for 
-      encoding the given [const_variant] type into a protobuffer. 
-    *)
-
-  val gen_string_of : record -> string
+  val gen_string_of : ?and_:unit -> type_ -> string option
   (** [gen_string_of record] generates the function implementation for 
       computing a debug string of the given record
     *)
 
-  val gen_string_of_const_variant : const_variant -> string
-  (** [gen_string_of v] generates the function implementation for 
-      computing a debug string of the given const_variant 
-    *)
-
-  val gen_string_of_sig : record -> string
+  val gen_string_of_sig : type_ -> string option 
   (** [gen_string_of_sig record] generates the function signature for 
       computing a debug string of the given record
    *)
 
   (* --- Testing purpose onlye --- *)
-  val gen_mappings : record -> string
+  val gen_mappings_record : record -> string
 
 end
 

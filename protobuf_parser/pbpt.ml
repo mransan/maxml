@@ -3,10 +3,11 @@
 
 (** field constant *) 
 type constant = 
-  | Constant_string of string 
-  | Constant_bool   of bool 
-  | Constant_int    of int 
-  | Constant_float  of float 
+  | Constant_string   of string 
+  | Constant_bool     of bool 
+  | Constant_int      of int 
+  | Constant_float    of float 
+  | Constant_litteral of string 
 
 (** field can have a list of options attached to 
     them, for example the most widely used is [default]:

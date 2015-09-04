@@ -129,7 +129,7 @@ let type_name_of_message field_message_scope message_scope message_name =
         S.concat "." namespaces  ^ "."
     in 
     match message_names with
-    | [] -> module_prefix^ (S.lowercase_ascii message_name)
+    | [] -> module_prefix ^ (S.lowercase_ascii message_name)
     | _  -> 
       module_prefix ^ 
       S.concat "_" message_names ^ 
@@ -267,10 +267,13 @@ module Codegen = struct
     Str.global_replace (Str.regexp "^" ) (String.make (n * 2) ' ') s  
   (** [add_indentation n s] adds a multiple of 2 spaces indentation to [s] *)
 
+  let type_decl_of_and = function | Some _ -> "and" | None -> "type" 
+  
+  let let_decl_of_and = function | Some _ -> "and" | None -> "let rec" 
 
-  let gen_record_type {record_name; fields } = 
+  let gen_type_record ?and_ {record_name; fields } = 
     concat [
-      P.sprintf "type %s = {" record_name;
+      P.sprintf "%s %s = {" (type_decl_of_and and_) record_name;
       concat @@ List.map (fun {field_name; field_type; type_qualifier; _ } -> 
         let type_name = string_of_field_type type_qualifier field_type in 
         sp "  %s : %s;" field_name type_name
@@ -278,24 +281,29 @@ module Codegen = struct
       "\n}"
     ]
   
-  let gen_variant_type {variant_name; constructors } = 
+  let gen_type_variant ?and_ {variant_name; constructors } = 
     concat [
-      P.sprintf "type %s =" variant_name; 
+      P.sprintf "%s %s =" (type_decl_of_and and_) variant_name; 
       concat @@ List.map (fun {field_name; field_type; type_qualifier; _ } -> 
         let type_name = string_of_field_type type_qualifier field_type in 
         sp "  | %s of %s" field_name type_name
       ) constructors;
     ]
   
-  let gen_const_variant_type {variant_name; constructors } = 
+  let gen_type_const_variant ?and_ {variant_name; constructors } = 
     concat [
-      P.sprintf "type %s =" variant_name; 
+      P.sprintf "%s %s =" (type_decl_of_and and_) variant_name; 
       concat @@ List.map (fun (name, _ ) -> 
         sp "  | %s " name
       ) constructors;
     ]
 
-  (** [gen_mappings r] generates a per record variable to hold the 
+  let gen_type ?and_ = function 
+    | Record r        -> gen_type_record ?and_ r 
+    | Variant v       -> gen_type_variant  ?and_ v 
+    | Const_variant v -> gen_type_const_variant ?and_ v 
+
+  (** [gen_mappings_record r] generates a per record variable to hold the 
       mapping between a field number and the associated decoding routine. 
 
       Because the order of fields inside the protobuffer message is not
@@ -303,7 +311,7 @@ module Codegen = struct
       The decoding code must therefore first collect all the record fields 
       values and then create the value of the OCaml type. 
     *)
-  let gen_mappings {record_name; fields} =
+  let gen_mappings_record {record_name; fields} =
 
     concat [
       P.sprintf "let %s_mappings = [" record_name;
@@ -369,10 +377,10 @@ module Codegen = struct
       ) max_so_far constructors 
     ) (- 1) fields
 
-  let gen_decode ({record_name; fields } as record) = 
-    String.concat "" [
-      P.sprintf "let decode_%s =" record_name;
-      sp "%s" (add_indentation 1 @@ gen_mappings record); 
+  let gen_decode_record ?and_ ({record_name; fields } as record) = 
+    concat [
+      P.sprintf "%s decode_%s =" (let_decl_of_and and_) record_name;
+      sp "%s" (add_indentation 1 @@ gen_mappings_record record); 
       sp "  in";
       sp "  (fun d ->"; 
       sp "    let a = decode d %s_mappings (Array.make %i []) in {" record_name (max_field_number fields + 1);
@@ -398,28 +406,50 @@ module Codegen = struct
                 field_name field_number constructor
         )
         | One_of {constructors; variant_name} -> 
-            let all_numbers = List.fold_left (fun s {encoding_type= {Encoding_util.field_number; _ } ; _ } -> 
-              s ^ (P.sprintf "%i;" field_number)
-            ) "[" constructors in 
-            let all_numbers = all_numbers ^ "]" in 
+            let all_numbers = concat @@ List.map (fun {encoding_type= {Encoding_util.field_number; _ } ; _ } -> 
+              (P.sprintf "%i;" field_number)
+            ) constructors in 
+            let all_numbers = concat ["["; all_numbers; "]"] in 
             sp "%s = (match oneof %s a with | `%s __v -> __v | _ -> e());"
               field_name all_numbers (constructor_name variant_name)
       ) fields;
       sp "    }";
       sp "  )";
     ]
-  
-  let gen_decode_sig {record_name; _ } = 
-    concat [
-      P.sprintf "val decode_%s : Protobuf_codec.Decoder.t -> %s" 
-        record_name record_name;
-      sp "(** [decode_%s decoder] decodes a [%s] value from [decoder] *)"
-        record_name record_name; 
-    ]
-  
 
-  let gen_encode {record_name; fields } = 
-    L.log "gen_encode record_name: %s\n" record_name; 
+
+  let gen_decode_const_variant ?and_ {variant_name; constructors; } = 
+    concat [
+      P.sprintf "%s decode_%s d = " (let_decl_of_and and_) variant_name; 
+      sp "  match decode_varint_as_int d with";
+      concat @@ List.map (fun (name, value) -> 
+        sp "  | %i -> %s" value name
+      ) constructors; 
+      sp "  | _ -> failwith \"Unknown value for enum %s\"" variant_name; 
+    ] 
+
+  let gen_decode ?and_ = function 
+    | Record r        -> Some (gen_decode_record ?and_ r)
+    | Variant _       -> None
+    | Const_variant v -> Some (gen_decode_const_variant ?and_ v)
+  
+  let gen_decode_sig t = 
+    let f type_name = 
+      concat [
+        P.sprintf "val decode_%s : Protobuf_codec.Decoder.t -> %s" 
+          type_name type_name ;
+        sp "(** [decode_%s decoder] decodes a [%s] value from [decoder] *)"
+          type_name type_name; 
+      ]
+    in 
+
+    match t with 
+      | Record {record_name ; _ } ->  Some (f record_name)
+      | Variant _ -> None
+      | Const_variant {variant_name; _ } -> Some (f variant_name)
+  
+  let gen_encode_record ?and_ {record_name; fields } = 
+    L.log "gen_encode_record record_name: %s\n" record_name; 
 
     let gen_field ?indent v_name encoding_type field_type = 
       let {
@@ -448,7 +478,7 @@ module Codegen = struct
     in
 
     concat [
-      P.sprintf "let encode_%s v encoder = " record_name;
+      P.sprintf "%s encode_%s v encoder = " (let_decl_of_and and_) record_name;
       add_indentation 1 @@ concat @@ List.map (fun field -> 
         L.log "gen_code field_name: %s\n" field.field_name;
 
@@ -461,10 +491,10 @@ module Codegen = struct
             gen_field v_name encoding_type field_type
           )
           | Option -> concat [
-            sp "match v.%s with " field_name;
+            sp "(match v.%s with " field_name;
             sp "| Some x -> (%s)"
             (gen_field ~indent:() "x" encoding_type field_type) ;
-            sp "| None -> ();" ;
+            sp "| None -> ());" ;
           ]
           | List -> concat [ 
             sp "List.iter (fun x -> ";
@@ -474,28 +504,48 @@ module Codegen = struct
         )
         | One_of {constructors; variant_name = _} -> (  
           concat [
-            sp "match v.%s with" field_name;
+            sp "(match v.%s with" field_name;
             concat @@ List.map (fun {encoding_type; field_type; field_name; type_qualifier= _ } ->
                 let encode_field  = gen_field ~indent:() "x" encoding_type field_type in 
                 sp "| %s x -> (%s\n)" field_name encode_field
             ) constructors;
-            ";";
+            ");";
           ]
         )           (* one of        *)
       ) fields;  (* record fields *) 
     "\n  ()"
     ]
+
+  let gen_encode_const_variant ?and_ {variant_name; constructors; } = 
+    concat [
+      P.sprintf "%s encode_%s v encoder =" (let_decl_of_and and_) variant_name; 
+      sp "  match v with";
+      concat @@ List.map (fun (name, value) -> 
+        sp "  | %s -> encode_int_as_varint %i encoder" name value
+      ) constructors; 
+    ] 
   
-  let gen_encode_sig {record_name; _ } = 
+  let gen_encode ?and_ = function 
+    | Record r        -> Some (gen_encode_record  ?and_ r)
+    | Variant _       -> None 
+    | Const_variant v -> Some (gen_encode_const_variant ?and_ v)
+
+  let gen_encode_sig t = 
+    let f type_name = 
     concat [
       P.sprintf "val encode_%s : %s -> Protobuf_codec.Encoder.t -> unit"
-        record_name
-        record_name;
+        type_name
+        type_name;
       sp "(** [encode_%s v encoder] encodes [v] with the given [encoder] *)" 
-        record_name  
+        type_name  
     ]
+    in 
+    match t with 
+    | Record {record_name ; _ } -> Some (f record_name)
+    | Variant _ -> None
+    | Const_variant {variant_name; _ } -> Some (f variant_name) 
   
-  let gen_string_of {record_name; fields } = 
+  let gen_string_of_record  ?and_ {record_name; fields } = 
     L.log "gen_string_of, record_name: %s\n" record_name; 
 
     let gen_field field_name field_type = 
@@ -509,7 +559,7 @@ module Codegen = struct
     in
 
     concat [
-      P.sprintf "let string_of_%s v = " record_name;
+      P.sprintf "%s string_of_%s v = " (let_decl_of_and and_) record_name;
       "\n  add_indentation 1 @@ String.concat \"\" [";
       add_indentation 2 @@ concat @@ List.map (fun field -> 
         L.log "gen_string_of field_name: %s\n" field.field_name;
@@ -549,37 +599,30 @@ module Codegen = struct
       "\n  ]";
     ]
 
-  let gen_string_of_sig {record_name; fields = _ } = 
+  let gen_string_of_const_variant ?and_ {variant_name; constructors; } = 
     concat [
-      P.sprintf "val string_of_%s : %s -> string " record_name record_name;
-      sp "(** [string_of_%s v] returns a debugging string for [v] *)" record_name;
-    ]
-
-  let gen_decode_const_variant {variant_name; constructors; } = 
-    concat [
-      P.sprintf "let decode_%s d = " variant_name; 
-      sp "  match decode_varint_as_int d with";
-      concat @@ List.map (fun (name, value) -> 
-        sp "  | %i -> %s" value name
-      ) constructors; 
-      sp "  | _ -> failwith \"Unknown value for enum %s\"" variant_name; 
-    ] 
-  
-  let gen_encode_const_variant {variant_name; constructors; } = 
-    concat [
-      P.sprintf "let encode_%s v encoder =" variant_name; 
-      sp "  match v with";
-      concat @@ List.map (fun (name, value) -> 
-        sp "  | %s -> encode_int_as_varint %i encoder" name value
-      ) constructors; 
-    ] 
-  
-  let gen_string_of_const_variant {variant_name; constructors; } = 
-    concat [
-      P.sprintf "let string_of_%s v =" variant_name; 
+      P.sprintf "%s string_of_%s v =" (let_decl_of_and and_) variant_name; 
       sp "  match v with";
       concat @@ List.map (fun (name, _ ) -> 
         sp "  | %s -> \"%s\"" name name
       ) constructors; 
     ] 
+
+  let gen_string_of ?and_ = function 
+    | Record r   -> Some (gen_string_of_record ?and_ r) 
+    | Variant _  -> None
+    | Const_variant v -> Some (gen_string_of_const_variant ?and_ v)
+
+  let gen_string_of_sig t = 
+    let f type_name =  
+       concat [
+         P.sprintf "val string_of_%s : %s -> string " type_name type_name;
+         sp "(** [string_of_%s v] returns a debugging string for [v] *)" type_name;
+       ]
+    in 
+    match t with 
+    | Record {record_name ; _ } -> Some (f record_name)
+    | Variant _ -> None
+    | Const_variant {variant_name; _ ; } -> Some (f variant_name) 
+
 end  

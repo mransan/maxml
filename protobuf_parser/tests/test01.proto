@@ -14,10 +14,16 @@ message Person {
         int32  self_employed = 5; // value is unused  
         string employed_by   = 6; // value is company name
     }
+    enum MaritalStatus {
+        Single = 1; 
+        Married = 2; 
+    }
+    optional MaritalStatus marital_status = 7 [default=Single];
 }
 
 message Couple {
     required Person p1 = 1;
     required Person p2 = 2; 
     repeated Person.TelNumber contact_numbers = 3;
+    optional uint32 number_of_children = 4 [default = 0];
 }

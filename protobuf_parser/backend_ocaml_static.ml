@@ -9,7 +9,7 @@ let add_indentation n s =
 module Pc = Protobuf_codec 
 
 let decode_varint_as_int decoder = 
-  (* Pc.Decoder.int_of_int64 "" @@ Pc.Decoder.varint decoder *) 
+  (*Pc.Decoder.int_of_int64 "" @@ Pc.Decoder.varint decoder*)
   Int64.to_int @@ Pc.Decoder.varint decoder
 
 let decode_varint_zigzag_as_int decoder = 

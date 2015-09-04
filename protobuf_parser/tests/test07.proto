@@ -1,0 +1,13 @@
+message Node {
+    required uint32 value = 1;
+    optional Node   left  = 2; 
+    optional Node   right = 3;
+}
+
+
+message Tree {
+    oneof t {
+        uint32 empty = 1; 
+        Node   node  = 2; 
+    }
+}

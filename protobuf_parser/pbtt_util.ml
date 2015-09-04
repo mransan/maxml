@@ -1,5 +1,3 @@
-
-  
 module E = Exception 
 module L = Logger 
 
@@ -15,7 +13,6 @@ let field_type {Pbtt.field_type; _ } =
 
 let field_label {Pbtt.field_parsed = {Pbpt.field_label; _ }; _ } = 
   field_label 
-
 
 let empty_scope  = { Pbtt.namespaces = []; Pbtt.message_names = [] } 
 
@@ -108,7 +105,8 @@ let compile_default field_name constant = function
     | Pbpt.Constant_int i -> Pbpt.Constant_float (float_of_int i)
     | Pbpt.Constant_float _  -> constant
     | Pbpt.Constant_string _ 
-    | Pbpt.Constant_bool _ -> 
+    | Pbpt.Constant_bool _
+    | Pbpt.Constant_litteral _  -> 
       raise @@ E.invalid_default_value 
         ~field_name ~info:"invalid default type (float/int expected)" ()
   )
@@ -124,6 +122,7 @@ let compile_default field_name constant = function
     | Pbpt.Constant_int _ -> constant  
     | Pbpt.Constant_string _ 
     | Pbpt.Constant_bool  _ 
+    | Pbpt.Constant_litteral  _
     | Pbpt.Constant_float _ -> 
       raise @@ E.invalid_default_value 
         ~field_name ~info:"invalid default type (int expected)" ()
@@ -137,6 +136,7 @@ let compile_default field_name constant = function
         ~field_name ~info:"negative default value for unsigned int" () 
     | Pbpt.Constant_string _ 
     | Pbpt.Constant_bool  _ 
+    | Pbpt.Constant_litteral _ 
     | Pbpt.Constant_float _ -> raise @@ E.invalid_default_value
         ~field_name ~info:"invalid default type (int expected)" ()
   )
@@ -145,6 +145,7 @@ let compile_default field_name constant = function
     | Pbpt.Constant_bool _ -> constant
     | Pbpt.Constant_string _ 
     | Pbpt.Constant_float _ 
+    | Pbpt.Constant_litteral _
     | Pbpt.Constant_int _  -> raise @@ E.invalid_default_value 
       ~field_name ~info:"invalid default type (bool expected)" ()
   ) 
@@ -153,14 +154,21 @@ let compile_default field_name constant = function
    | Pbpt.Constant_string _ -> constant
     | Pbpt.Constant_float _ 
     | Pbpt.Constant_int _ 
+    | Pbpt.Constant_litteral _ 
     | Pbpt.Constant_bool  _  -> raise @@ E.invalid_default_value 
       ~field_name ~info:"invalid default type (string expected)" ()
   ) 
   | Pbtt.Field_type_bytes -> raise @@ E.invalid_default_value 
     ~field_name ~info:"default value not supported for bytes" ()
-  | Pbtt.Field_type_type _ -> raise @@ E.invalid_default_value 
-    (* TODO NOT true for enum *)
-    ~field_name ~info:"default value not supported for message" ()
+  | Pbtt.Field_type_type _ -> (
+    match constant with 
+    | Pbpt.Constant_litteral _ -> constant 
+    | Pbpt.Constant_string _
+    | Pbpt.Constant_bool _
+    | Pbpt.Constant_float _
+    | Pbpt.Constant_int _ -> raise @@ E.invalid_default_value 
+      ~field_name ~info:"default value not supported for message" ()
+  )
 
 let get_default field_name field_options field_type = 
   match List.assoc "default" field_options with
@@ -341,16 +349,16 @@ let compile_message_p2 types ({
     
   let process_field_type message_name field = 
     let field_name = field_name field in 
-    L.log "field_name: %s\n" field_name; 
+    L.log "[pbtt] field_name: %s\n" field_name; 
     match field.Pbtt.field_type with 
     | Pbtt.Field_type_type ({Pbtt.scope; Pbtt.type_name; Pbtt.from_root} as unresolved) -> ( 
-      L.endline @@ string_of_unresolved unresolved ; 
+      L.endline @@ "[pbtt] " ^ string_of_unresolved unresolved ; 
       
       let search_scopes = search_scopes scope from_root in 
 
-      L.log "message scope: %s\n" @@ string_of_string_list message_scope;
+      L.log "[pbtt] message scope: %s\n" @@ string_of_string_list message_scope;
       List.iteri (fun i scope -> 
-        L.log "search_scope[%2i] : %s\n" i @@ string_of_string_list scope 
+        L.log "[pbtt] search_scope[%2i] : %s\n" i @@ string_of_string_list scope 
       ) search_scopes;
 
       let id  = List.fold_left (fun id scope -> 
@@ -388,3 +396,36 @@ let compile_message_p2 types ({
 let compile_type_p2 all_types = function 
   | Pbtt.Message  m     -> Pbtt.Message (compile_message_p2 all_types m) 
   | (Pbtt.Enum _ ) as e -> e
+
+let node_of_proto_type = function 
+  | Pbtt.Enum {Pbtt.enum_id ; _ } -> Graph.create enum_id [] 
+  | Pbtt.Message {Pbtt.id; Pbtt.message_body; _ } -> 
+    let sub = List.flatten @@ List.map (function
+      | Pbtt.Message_field {Pbtt.field_type; _ } -> (
+        match field_type with
+        | Pbtt.Field_type_type x -> [x]
+        | _                      -> []
+      )
+      | Pbtt.Message_oneof_field {Pbtt.oneof_fields; _ } -> 
+          List.flatten @@ List.map (fun {Pbtt.field_type; _ } -> (
+           match field_type with
+           | Pbtt.Field_type_type x -> [x]
+           | _ -> []
+          )
+          ) oneof_fields  
+    ) message_body in 
+    Graph.create id sub
+
+let is_id input_id = function 
+  | Pbtt.Enum {Pbtt.enum_id ; _ } -> input_id = enum_id 
+  | Pbtt.Message {Pbtt.id; _ }    -> input_id = id 
+
+let group proto = 
+  let g    = List.map node_of_proto_type proto  in 
+  let g    = List.fold_left (fun m ({Graph.id; _ } as n) -> 
+    Graph.Int_map.add id n m 
+  ) Graph.Int_map.empty g in 
+  let sccs = Graph.tarjan g in 
+  List.map (fun l -> 
+    List.map (fun id -> List.find (is_id id) proto) l 
+  ) sccs 

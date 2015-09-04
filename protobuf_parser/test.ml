@@ -1,4 +1,5 @@
 
+let () = Logger.setup_from_out_channel stdout 
 
 module Pc = Protobuf_codec
 
@@ -756,13 +757,13 @@ let () =
   v3 : other;
 }|} in 
 
-    assert(s = BO.Codegen.gen_record_type r);
+    assert(s = BO.Codegen.gen_type (BO.Record r));
     let s = {|let test_mappings = [
   (1, (fun d -> `Int (decode_varint_as_int d)));
   (2, (fun d -> `String (decode_bytes_as_string d)));
   (3, (fun d -> `Other (decode_other (Pc.Decoder.nested d))));
 ]|} in
-    assert (s = BO.Codegen.gen_mappings r);
+    assert (s = BO.Codegen.gen_mappings_record r);
     ()
   in 
   let () = 
@@ -831,5 +832,67 @@ let () =
     assert(ev2 = List.nth e.Pbpt.enum_values 1); 
     ()
   in
+
+  (** helpers functions for Graph *)
+  let open Graph in 
+
+  let add (key, v) m = 
+    Int_map.add key v m 
+  in  
+
+  let create_node id sub = 
+    id, {id; sub; index = None; lowlink = None; on_stack = false} 
+  in  
+
+  let print_sccs sccs = 
+    Logger.endline @@ "[Test] " ^ "[" ^ (String.concat ";" (List.map (fun l -> 
+      "[" ^ (String.concat ";" (List.map string_of_int l)) ^ "]"
+      ) sccs )) ^ "]"
+  in 
+
+  let () = 
+    let g = 
+      Int_map.empty
+      |> add (create_node 2 [1;3]) 
+      |> add (create_node 1 []) 
+      |> add (create_node 3 []) 
+    in 
+    let sccs = tarjan g in 
+    print_sccs sccs; 
+    assert ([[2]; [3]; [1]] = sccs)
+  in  
+  let () = 
+    let g = 
+      Int_map.empty
+      |> add (create_node 1 [2;]) 
+      |> add (create_node 2 [3]) 
+      |> add (create_node 3 []) 
+    in 
+    let sccs = tarjan g in 
+    print_sccs sccs; 
+    assert ([[1]; [2]; [3]] = sccs)
+  in  
+  let () = 
+    let g = 
+      Int_map.empty
+      |> add (create_node 1 [2;3]) 
+      |> add (create_node 2 [1;]) 
+      |> add (create_node 3 []) 
+    in 
+    let sccs = tarjan g in 
+    print_sccs sccs; 
+    assert ([[1;2]; [3]] = sccs)
+  in  
+  let () = 
+    let g = 
+      Int_map.empty
+      |> add (create_node 1 [2;3]) 
+      |> add (create_node 2 [3;]) 
+      |> add (create_node 3 [1;]) 
+    in 
+    let sccs = tarjan g in 
+    print_sccs sccs; 
+    assert ([[1;2;3]] = sccs)
+  in  
   print_endline "\n--- Good ---";
   ()
