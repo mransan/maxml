@@ -67,6 +67,8 @@ val compile_type_p2:
   Pbtt.unresolved Pbtt.proto_type -> 
   Pbtt.resolved Pbtt.proto_type
 
+val group: Pbtt.resolved Pbtt.proto -> Pbtt.resolved Pbtt.proto list 
+
 (** {2 For testing only} *) 
 
 val compile_oneof_p1: Pbpt.oneof -> Pbtt.unresolved Pbtt.oneof
@@ -77,4 +79,3 @@ val find_all_types_in_field_scope :
   'a Pbtt.proto -> 
   Pbtt.field_scope-> 
   'a Pbtt.proto
-

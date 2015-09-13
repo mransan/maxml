@@ -16,10 +16,10 @@ test_util.cmx:test_util.ml
 %_cpp.tsk: %_cpp.cpp %.pb.cc 
 	g++ -I ./  -I $(PB_HINC) $? -L $(PB_LINC) -l protobuf -o $@
 
-%_types.ml %_types.mli : %.proto
-	$(ML_PROTOC) -debug -out ./$*_types $<
+%_pb.ml %_pb.mli : %.proto
+	$(ML_PROTOC) -debug $<
 
-%_ml.tsk: test_util.cmx %_types.mli %_types.ml %_ml.ml 
+%_ml.tsk: test_util.cmx %_pb.mli %_pb.ml %_ml.ml 
 	$(OCAMLOPT) -I $(PBC_INC) unix.cmxa str.cmxa protobuf_codec.cmxa $? -o $@ 
 
 .PHONY: all clean 
@@ -37,12 +37,12 @@ testCompat: test04_ml.tsk test03_cpp.tsk
 	./test04_ml.tsk encode
 	./test03_cpp.tsk decode
 
-all: test01 test02 testCompat test05 test06 
+all: test01 test02 testCompat test05 test06 test07 test08 
 
 
 clean:
 	rm -f test0*.pb*
-	rm -f test0*_types.*
+	rm -f test0*_pb.*
 	rm -f *.tsk
 	rm -f *.data
 	rm -f *.o

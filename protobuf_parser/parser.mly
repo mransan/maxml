@@ -146,7 +146,7 @@ constant :
   | IDENT      { match $1 with 
     | "true"  -> Pbpt.Constant_bool true 
     | "false" -> Pbpt.Constant_bool false 
-    | _ -> failwith "invalid default value"
+    | litteral -> Pbpt.Constant_litteral litteral 
   }
   | STRING     { Pbpt.Constant_string $1 }; 
 
