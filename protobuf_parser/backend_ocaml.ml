@@ -253,6 +253,14 @@ let compile all_types = function
 
 module Codegen = struct 
   module P = Printf
+  
+  let caml_file_name_of_proto_file_name proto = 
+    let splitted = Util.rev_split_by_char '.' proto in 
+    if List.length splitted < 2 || 
+       List.hd splitted <> "proto" 
+    then failwith "Proto file has no valid extension"
+    else 
+      String.concat "_" @@ List.rev @@ ("pb" :: (List.tl splitted)) 
 
   let sp x =  P.sprintf ("\n" ^^ x)  
   (** [sp x] same as sprintf but prefixed with new line *)

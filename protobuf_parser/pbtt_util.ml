@@ -390,7 +390,7 @@ let compile_type_p2 all_types = function
   | (Pbtt.Enum _ ) as e -> e
 
 let node_of_proto_type = function 
-  | Pbtt.Enum {Pbtt.enum_id ; _ } -> Graph.create enum_id [] 
+  | Pbtt.Enum {Pbtt.enum_id ; _ } -> Graph.create_node enum_id [] 
   | Pbtt.Message {Pbtt.id; Pbtt.message_body; _ } -> 
     let sub = List.flatten @@ List.map (function
       | Pbtt.Message_field {Pbtt.field_type; _ } -> (
@@ -406,7 +406,7 @@ let node_of_proto_type = function
           )
           ) oneof_fields  
     ) message_body in 
-    Graph.create id sub
+    Graph.create_node id sub
 
 let is_id input_id = function 
   | Pbtt.Enum {Pbtt.enum_id ; _ } -> input_id = enum_id 
@@ -414,9 +414,9 @@ let is_id input_id = function
 
 let group proto = 
   let g    = List.map node_of_proto_type proto  in 
-  let g    = List.fold_left (fun m ({Graph.id; _ } as n) -> 
-    Graph.Int_map.add id n m 
-  ) Graph.Int_map.empty g in 
+  let g    = List.fold_left (fun m n -> 
+    Graph.add_node n m 
+  ) Graph.empty_graph g in 
   let sccs = Graph.tarjan g in 
   List.map (fun l -> 
     List.map (fun id -> List.find (is_id id) proto) l 

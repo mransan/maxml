@@ -73,6 +73,16 @@ val compile :
 (** {2 Code Generation} *)
 
 module Codegen : sig
+  
+  val caml_file_name_of_proto_file_name : string -> string 
+  (** [caml_file_name_of_proto_file_name f] returns the 
+      ocaml base file name corresponding to the proto file name [f]. The
+      extension (.ml or .mli) is the responsability of the caller. 
+      
+      It's important to note that similarly to Google protoc compiler, 
+      the generated file name is a hard coding mapping to the proto filename. This
+      is needed in order to independently generate included proto files. 
+    *)
 
   val gen_type : ?and_:unit -> type_ -> string 
   (** [gen_type_const_variant v] generates the OCaml type declaration for [v]

@@ -32,6 +32,7 @@ $OCAMLOPT -w +A -c util.mli
 $OCAMLOPT -w +A -c util.ml
 $OCAMLOPT -w +A -c logger.mli
 $OCAMLOPT -w +A -c logger.ml
+$OCAMLOPT -w +A -c graph.mli
 $OCAMLOPT -w +A -c graph.ml
 $OCAMLOPT -w +A -c pbpt.ml
 $OCAMLOPT -w +A -c pbtt.ml

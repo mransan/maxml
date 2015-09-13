@@ -836,13 +836,7 @@ let () =
   (** helpers functions for Graph *)
   let open Graph in 
 
-  let add (key, v) m = 
-    Int_map.add key v m 
-  in  
-
-  let create_node id sub = 
-    id, {id; sub; index = None; lowlink = None; on_stack = false} 
-  in  
+  let create_node  = Graph.create_node in  
 
   let print_sccs sccs = 
     Logger.endline @@ "[Test] " ^ "[" ^ (String.concat ";" (List.map (fun l -> 
@@ -852,10 +846,10 @@ let () =
 
   let () = 
     let g = 
-      Int_map.empty
-      |> add (create_node 2 [1;3]) 
-      |> add (create_node 1 []) 
-      |> add (create_node 3 []) 
+      Graph.empty_graph
+      |> Graph.add_node (create_node 2 [1;3]) 
+      |> Graph.add_node (create_node 1 []) 
+      |> Graph.add_node (create_node 3 []) 
     in 
     let sccs = tarjan g in 
     print_sccs sccs; 
@@ -863,10 +857,10 @@ let () =
   in  
   let () = 
     let g = 
-      Int_map.empty
-      |> add (create_node 1 [2;]) 
-      |> add (create_node 2 [3]) 
-      |> add (create_node 3 []) 
+      Graph.empty_graph
+      |> Graph.add_node (create_node 1 [2;]) 
+      |> Graph.add_node (create_node 2 [3]) 
+      |> Graph.add_node (create_node 3 []) 
     in 
     let sccs = tarjan g in 
     print_sccs sccs; 
@@ -874,10 +868,10 @@ let () =
   in  
   let () = 
     let g = 
-      Int_map.empty
-      |> add (create_node 1 [2;3]) 
-      |> add (create_node 2 [1;]) 
-      |> add (create_node 3 []) 
+      Graph.empty_graph
+      |> Graph.add_node (create_node 1 [2;3]) 
+      |> Graph.add_node (create_node 2 [1;]) 
+      |> Graph.add_node (create_node 3 []) 
     in 
     let sccs = tarjan g in 
     print_sccs sccs; 
@@ -885,10 +879,10 @@ let () =
   in  
   let () = 
     let g = 
-      Int_map.empty
-      |> add (create_node 1 [2;3]) 
-      |> add (create_node 2 [3;]) 
-      |> add (create_node 3 [1;]) 
+      Graph.empty_graph
+      |> Graph.add_node (create_node 1 [2;3]) 
+      |> Graph.add_node (create_node 2 [3;]) 
+      |> Graph.add_node (create_node 3 [1;]) 
     in 
     let sccs = tarjan g in 
     print_sccs sccs; 

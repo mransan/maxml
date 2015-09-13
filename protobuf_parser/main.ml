@@ -1,14 +1,7 @@
 
 module L = Logger 
   
-let caml_file_name_of_proto_file_name proto = 
-  let splitted = Util.rev_split_by_char '.' proto in 
-  if List.length splitted < 2 || 
-     List.hd splitted <> "proto" 
-  then failwith "Proto file has no valid extension"
-  else 
-    String.concat "_" @@ List.rev @@ ("pb" :: (List.tl splitted)) 
-
+let caml_file_name_of_proto_file_name = Backend_ocaml.Codegen.caml_file_name_of_proto_file_name 
 
 (** [parse_args ()] parses the command line argument 
     and returns [(in_channel, out_channel)] where 
