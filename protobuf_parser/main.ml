@@ -1,7 +1,14 @@
 
 module L = Logger 
   
-let concat = String.concat ""
+let caml_file_name_of_proto_file_name proto = 
+  let splitted = Util.rev_split_by_char '.' proto in 
+  if List.length splitted < 2 || 
+     List.hd splitted <> "proto" 
+  then failwith "Proto file has no valid extension"
+  else 
+    String.concat "_" @@ List.rev @@ ("pb" :: (List.tl splitted)) 
+
 
 (** [parse_args ()] parses the command line argument 
     and returns [(in_channel, out_channel)] where 
@@ -10,10 +17,8 @@ let concat = String.concat ""
   *)
 let parse_args () = 
   let proto_file_name = ref "" in  
-  let out_file_name   = ref "" in 
   let debug           = ref false in  
   let cmd_line_args = [
-    ("-out", Arg.Set_string out_file_name, "out file name");  
     ("-debug", Arg.Set debug, "enable debugging");  
   ] in 
   let anon_fun  = (fun proto_file -> 
@@ -22,12 +27,15 @@ let parse_args () =
   let usage = "protobufo.tsk -out <file_name> <file_name>.proto" in  
   Arg.parse cmd_line_args anon_fun usage;
   assert(!proto_file_name <> ""); 
-  let struct_oc = match !out_file_name with 
+
+  let out_file_name  = caml_file_name_of_proto_file_name !proto_file_name in  
+  Printf.printf "proto: %s -> caml: %s \n" !proto_file_name out_file_name; 
+  let struct_oc = match out_file_name with 
     | "" -> stdout 
-    | _  -> open_out (!out_file_name ^ ".ml") in 
-  let sig_oc = match !out_file_name with 
+    | _  -> open_out (out_file_name ^ ".ml") in 
+  let sig_oc = match out_file_name with 
     | "" -> stdout 
-    | _  -> open_out (!out_file_name ^ ".mli") in 
+    | _  -> open_out (out_file_name ^ ".mli") in 
   (open_in !proto_file_name, sig_oc, struct_oc, !debug)  
 
 let () = 
@@ -76,6 +84,7 @@ let () =
     else wrap @@ f ~and_:() type_)::sl, false 
   ) ([], true) types) 
   in 
+
   let gen_opt types (f:(?and_:unit -> BO.type_ -> string option))  = 
     List.flatten @@ List.rev @@ fst (List.fold_left (fun (sl, first) type_ -> 
       let s = 
@@ -87,6 +96,8 @@ let () =
       | None   -> sl   , first 
   ) ([], true) types) 
   in 
+
+  let concat = Util.concat in 
   
   output_string struct_oc @@ concat [
     Backend_ocaml_static.prefix_payload_to_ocaml_t;

@@ -260,8 +260,7 @@ module Codegen = struct
   let nl s = "\n" ^ s  
   (** [nl s] appends new line *)
 
-  let concat = String.concat ""
-  (** [concat l] concatenate a string list *)
+  let concat = Util.concat 
 
   let add_indentation n s = 
     Str.global_replace (Str.regexp "^" ) (String.make (n * 2) ' ') s  

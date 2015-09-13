@@ -1,5 +1,5 @@
 module Pc = Protobuf_codec 
-module T  = Test05_types 
+module T  = Test05_pb 
 
 let inc = 2147
 

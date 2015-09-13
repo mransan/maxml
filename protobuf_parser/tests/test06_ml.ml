@@ -1,5 +1,5 @@
 module Pc = Protobuf_codec 
-module T  = Test06_types 
+module T  = Test06_pb 
 
 
 let decode_ref_data () = {

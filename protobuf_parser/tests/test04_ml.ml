@@ -1,5 +1,5 @@
 module Pc = Protobuf_codec
-module T  = Test04_types 
+module T  = Test04_pb 
 
 let decode_ref_data () = {
   T.j = 456;
